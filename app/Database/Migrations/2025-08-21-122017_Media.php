@@ -28,6 +28,16 @@ class Media extends Migration
                 'constraint' => ['user', 'recipe', 'step', 'ingredient', 'brand'],
                 'default' => 'user',
             ],
+            'title' => [
+                'type' => 'VARCHAR',
+                'constraint' => '255',
+                'null' => true,
+            ],
+            'alt' => [
+                'type' => 'VARCHAR',
+                'constraint' => '255',
+                'null' => true,
+            ],
             'created_at' => [
                 'type'       => 'DATETIME',
                 'null'       => true,
@@ -44,7 +54,6 @@ class Media extends Migration
         $this->forge->addKey('id', true);
         $this->forge->createTable('media');
     }
-
     public function down()
     {
         $this->forge->dropTable('media');
