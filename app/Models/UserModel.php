@@ -62,4 +62,12 @@ class UserModel extends Model
             'integer'  => 'L’ID du rôle doit être un nombre.',
         ],
     ];
+    protected $beforeInsert = ['hashPassword'];
+    protected $beforeUpdate = ['hashPassword'];
+    protected function hashPassword(array $data){
+        if(!isset($data['data']['password'])) return $data;
+        $data['data']['password'] = password_hash($data['data']['password'], PASSWORD_DEFAULT);
+        return $data;
+    }
 }
+
