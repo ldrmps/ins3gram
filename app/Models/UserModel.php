@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Entities\User;
 use CodeIgniter\Model;
 
 class UserModel extends Model
@@ -9,11 +10,11 @@ class UserModel extends Model
     protected $table            = 'user';
     protected $primaryKey       = 'id';
     protected $useAutoIncrement = true;
-    protected $returnType       = 'array';
+    protected $returnType       = 'App\Entities\User';
     protected $useSoftDeletes   = true;
     protected $protectFields    = true;
     protected $allowedFields    = ['email','password','username','first_name','last_name', 'birthdate', 'id_permission'];
-
+    // Dates
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
     protected $createdField  = 'created_at';
@@ -62,12 +63,9 @@ class UserModel extends Model
             'integer'  => 'L’ID du rôle doit être un nombre.',
         ],
     ];
-    protected $beforeInsert = ['hashPassword'];
-    protected $beforeUpdate = ['hashPassword'];
-    protected function hashPassword(array $data){
-        if(!isset($data['data']['password'])) return $data;
-        $data['data']['password'] = password_hash($data['data']['password'], PASSWORD_DEFAULT);
-        return $data;
+
+    public function findByEmail(string $email): ?User
+    {
+        return $this->where('email', $email)->first();
     }
 }
-
