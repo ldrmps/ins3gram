@@ -12,7 +12,7 @@ class MediaModel extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['file_path','entity_id', 'entity_type'];
+    protected $allowedFields    = ['file_path','entity_id', 'entity_type','title','alt'];
     // Dates
     protected $useTimestamps = true;
     protected $dateFormat    = 'datetime';
