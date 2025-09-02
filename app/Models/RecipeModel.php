@@ -12,7 +12,7 @@ class RecipeModel extends Model
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
-    protected $allowedFields    = ['name', 'alcool','id_user'];
+    protected $allowedFields    = ['name', 'alcool','id_user','description'];
 
     // Dates
     protected $useTimestamps = true;
@@ -25,6 +25,7 @@ class RecipeModel extends Model
         'name'    => 'required|max_length[255]|is_unique[recipe.name,id,{id}]',
         'alcool'  => 'permit_empty|in_list[0,1]',
         'id_user' => 'permit_empty|integer',
+        'description' => 'permit_empty',
     ];
 
     protected $validationMessages = [
