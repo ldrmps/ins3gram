@@ -20,7 +20,7 @@ trait DataTableTrait
     /**
      * Applique les jointures configurées
      */
-    protected function applyJoins($builder, array $joins = null): void
+    protected function applyJoins($builder, ?array $joins = null): void
     {
         $joins = $joins ?? $this->getDataTableConfig()['joins'];
 
@@ -36,7 +36,7 @@ trait DataTableTrait
     /**
      * Applique les conditions de recherche
      */
-    protected function applySearch($builder, string $searchValue, array $searchableFields = null): void
+    protected function applySearch($builder, string $searchValue, ?array $searchableFields = null): void
     {
         if (empty($searchValue)) {
             return;
