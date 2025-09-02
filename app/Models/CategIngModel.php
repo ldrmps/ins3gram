@@ -17,7 +17,7 @@ class CategIngModel extends Model
 
     protected $validationRules = [
         'name'          => 'required|max_length[255]|is_unique[categ_ing.name,id,{id}]',
-        'id_type_parent'=> 'permit_empty|integer',
+        'id_categ_parent'=> 'permit_empty|integer',
     ];
     protected $validationMessages = [
         'name' => [
@@ -25,7 +25,7 @@ class CategIngModel extends Model
             'max_length' => 'Le nom de la catégorie ne peut pas dépasser 255 caractères.',
             'is_unique'  => 'Cette catégorie existe déjà.',
         ],
-        'id_type_parent' => [
+        'id_categ_parent' => [
             'integer' => 'L’ID du parent doit être un nombre.',
         ],
     ];

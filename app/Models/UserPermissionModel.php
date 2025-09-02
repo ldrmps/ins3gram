@@ -13,6 +13,11 @@ class UserPermissionModel extends Model
     protected $useSoftDeletes   = false;
     protected $protectFields    = true;
     protected $allowedFields    = ['name','slug'];
+    protected $validationRules = [
+        'name' => 'required|max_length[255]|is_unique[user_permission.name,id,{id}]',
+        'slug' => 'required|max_length[255]|is_unique[user_permission.name,id,{id}]',
+    ];
+
     protected $validationMessages = [
         'name' => [
             'required'   => 'Le nom de la permission est obligatoire.',
