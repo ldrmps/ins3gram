@@ -11,7 +11,7 @@
     "icon" : "<i class=\"nav-icon fas fa-martini-glass-citrus\"></i>",
     "class" : ""
   },
-  "user-permission": {
+  "ingredient": {
     "title": "Ingrédients",
     "icon": "<i class=\"nav-icon fas fa-clipboard-list\"></i>",
     "subs": {
