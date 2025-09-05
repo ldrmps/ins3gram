@@ -61,4 +61,42 @@ class Recipe extends BaseController
         }
         return $this->redirect('/admin/recipe');
     }
+    public function switchActive() {
+        $id = $this->request->getPost('id');
+        $recipeModel = model('RecipeModel');
+
+        // Récupérer la recette (même s'il est soft deleted)
+        $recipe = $recipeModel->withDeleted()->find($id);
+
+        if (!$recipe) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Recette introuvable'
+            ]);
+        }
+
+        if ($recipe->isActive()) {
+            // Désactiver l'utilisateur (soft delete)
+            $recipeModel->delete($id);
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Recette désactivé',
+                'status' => 'inactive'
+            ]);
+        } else {
+            // Réactiver avec la méthode restore
+            if ($recipeModel->reactive($id)) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Recette activé',
+                    'status' => 'active'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'activation'
+                ]);
+            }
+        }
+    }
 }

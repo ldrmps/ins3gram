@@ -25,6 +25,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->get('new', 'Recipe::create');
         $routes->post('insert', 'Recipe::insert');
         $routes->post('update', 'Recipe::update');
+        $routes->post('switch-active','Recipe::switchActive');
     });
 
     $routes->group('brand', function ($routes) {
