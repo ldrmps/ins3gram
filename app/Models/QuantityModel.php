@@ -7,7 +7,7 @@ use CodeIgniter\Model;
 class QuantityModel extends Model
 {
     protected $table            = 'quantity';
-    protected $primaryKey       = null;
+    protected $primaryKey       = 'id_ingredient';
     protected $useAutoIncrement = false;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;

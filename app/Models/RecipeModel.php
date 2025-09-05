@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use CodeIgniter\Model;
 use App\Traits\DataTableTrait;
+use CodeIgniter\Model;
 
 class RecipeModel extends Model
 {
@@ -62,21 +62,17 @@ class RecipeModel extends Model
         $data['data']['alcool'] = isset($data['data']['alcool']) ? 1 : 0;
         return $data;
     }
-    public function reactive(int $id): bool
-    {
-        return $this->builder()
-            ->where('id', $id)
-            ->update(['deleted_at' => null, 'updated_at' => date('Y-m-d H:i:s')]);
-    }
+
     protected function getDataTableConfig(): array
     {
         return [
             'searchable_fields' => [
                 'name',
-                'id',
             ],
-            'joins' => [],
+            'joins' => [
+            ],
             'select' => '*',
+            'with_deleted' => true
         ];
     }
 }
