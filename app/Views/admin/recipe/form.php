@@ -159,6 +159,8 @@ endif;
         });
         //Compteur pour nos ingrédients
         let cpt_ing = 0;
+        //url pour les requetes Ajax
+        baseUrl = "<?= base_url(); ?>";
         //Action du clique sur l'ajout d'un ingrédient
         $('#add-ingredient').on('click', function () {
             cpt_ing++; //augmente le compteur de 1
@@ -169,8 +171,6 @@ endif;
                     </div>
                     <div class="col">
                         <select class="form-select select-ingredient" name="ingredients[${cpt_ing}][id_ingredient]">
-                            <option value="1">A</option>
-                            <option value="2">B</option>
                         </select>
                     </div>
                     <div class="col">
@@ -178,14 +178,18 @@ endif;
                     </div>
                     <div class="col">
                         <select class="form-select select-unit" name="ingredients[${cpt_ing}][id_unit]">
-                            <option value="3">A</option>
-                            <option value="4">B</option>
                         </select>
                     </div>
                 </div>
             `;
             $('#zone-ingredients').append(row);
-            $('.select-ingredient').select2();
+            initAjaxSelect2('#zone-ingredients .row-ingredient:last-child .select-ingredient', {
+                url: baseUrl + '/admin/ingredient/search',
+                placeholder: 'Rechercher un ingrédient...',
+                searchFields: 'name,description',
+                showDescription: true,
+                delay: 250
+            });
             $('.select-unit').select2();
         });
         //Action du bouton de suppression des ingrédients
