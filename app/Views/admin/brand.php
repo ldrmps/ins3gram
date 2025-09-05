@@ -51,7 +51,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-b²s-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Annuler</button>
                 <button onclick="saveBrand()" type="button" class="btn btn-primary">Sauvegarder</button>
             </div>
         </div>
