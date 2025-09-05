@@ -36,7 +36,6 @@ class Recipe extends BaseController
 
     public function insert() {
         $data = $this->request->getPost();
-        echo "<pre>"; print_r($data); echo "</pre>";die();
         $rm = Model('RecipeModel');
         if($rm->insert($data)){
             $this->success('Recette créée avec succès !');
