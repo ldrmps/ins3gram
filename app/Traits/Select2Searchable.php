@@ -101,7 +101,7 @@ trait Select2Searchable
      * @param int $limit
      * @return array
      */
-    public function quickSearchForSelect2(string $search = '', int $page = 1, int $limit = 20): array
+    public function quickSearchForSelect2(string $search = '', int $page = 1, int $limit = 20,$orderBy = 'id', $orderDirection = 'ASC'): array
     {
         // Configuration par défaut, peut être surchargée dans chaque modèle
         $searchFields = property_exists($this, 'select2SearchFields')
@@ -127,7 +127,9 @@ trait Select2Searchable
             $searchFields,
             $displayField,
             $additionalFields,
-            $conditions
+            $conditions,
+            $orderBy,
+            $orderDirection
         );
     }
 

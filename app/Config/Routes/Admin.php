@@ -10,6 +10,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->post('update', 'User::update');
         $routes->post('insert', 'User::insert');
         $routes->post('switch-active','User::switchActive');
+        $routes->get('search', 'User::search');
     });
 
     $routes->group('user-permission', function ($routes) {
@@ -25,7 +26,6 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->get('new', 'Recipe::create');
         $routes->post('insert', 'Recipe::insert');
         $routes->post('update', 'Recipe::update');
-        $routes->post('switch-active','Recipe::switchActive');
     });
 
     $routes->group('brand', function ($routes) {
@@ -37,6 +37,10 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
 
     $routes->group('ingredient', function ($routes) {
         $routes->get('search', 'Ingredient::search');
+    });
+
+    $routes->group('unit', function ($routes) {
+        $routes->get('search', 'Unit::search');
     });
 
     $routes->group('category-ingredient', function ($routes) {
