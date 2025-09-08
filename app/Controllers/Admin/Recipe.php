@@ -26,12 +26,14 @@ class Recipe extends BaseController
         $this->addBreadcrumb('Recettes', "/admin/recipe");
         $this->addBreadcrumb('Modification d\'une recette', "");
         $recipe = Model('RecipeModel')->find($id_recipe);
+        $qm = Model('QuantityModel');
+        $ingredients = $qm->getQuantityByRecipe($id_recipe);
         if(!$recipe) {
             $this->error('Recette introuvable');
             return $this->redirect('/admin/recipe');
         }
         $users = Model('UserModel')->findAll();
-        return $this->view('admin/recipe/form', ['users' => $users,'recipe' => $recipe]);
+        return $this->view('admin/recipe/form', ['users' => $users,'recipe' => $recipe,'ingredients' => $ingredients]);
     }
 
     public function insert() {
