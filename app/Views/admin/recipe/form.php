@@ -71,11 +71,36 @@ endif;
                     <div class="tab-pane fade" id="ingredient-tab-pane" role="tabpanel">
                         <div class="mb-3">
                             <span class="btn btn-primary" id="add-ingredient">
-                                Ajouter un ingrédient
+                                <i class="fas fa-plus"></i> Ajouter un ingrédient
                             </span>
                         </div>
                         <div id="zone-ingredients">
-
+                            <?php
+                            if(isset($ingredients)) :
+                                $cpt_ing = 0;
+                                foreach($ingredients as $ingredient) :
+                                    $cpt_ing++;
+                                    ?>
+                                    <div class="row mb-3 row-ingredient">
+                                        <div class="col">
+                                            <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-trash-alt text-danger supp-ingredient"></i>
+                                        </span>
+                                                <select class="form-select flex-fill select-ingredient" name="ingredients[<?= $cpt_ing; ?>][id_ingredient]">
+                                                    <option value="<?= $ingredient['id_ingredient'] ?>" selected><?= $ingredient['ingredient'] ?></option>
+                                                </select>
+                                                <input class="form-control flex-fill" type="number" min="0.1" step="0.1" name="ingredients[<?= $cpt_ing; ?>][quantity]" placeholder="Quantité" value="<?= $ingredient['quantity'] ?>">
+                                                <select class="form-select flex-fill select-unit" name="ingredients[<?= $cpt_ing; ?>][id_unit]">
+                                                    <option value="<?= $ingredient['id_unit'] ?>" selected><?= $ingredient['unit'] ?></option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php
+                                endforeach;
+                            endif;
+                            ?>
                         </div>
                     </div>
                     <!--END: INGREDIENTS -->
@@ -153,7 +178,7 @@ endif;
                 'alignright alignjustify | bullist numlist outdent indent | ' +' fullscreen  preview code'
         });
         //Compteur pour nos ingrédients
-        let cpt_ing = 0;
+        let cpt_ing = $('#zone-ingredients .row-ingredient').length;
         //url pour les requetes Ajax
         baseUrl = "<?= base_url(); ?>";
 
@@ -163,7 +188,7 @@ endif;
             let row = `
                 <div class="row mb-3 row-ingredient">
                     <div class="col">
-                        <span class="input-group">
+                        <div class="input-group">
                             <span class="input-group-text">
                                 <i class="fas fa-trash-alt text-danger supp-ingredient"></i>
                             </span>
@@ -201,6 +226,21 @@ endif;
             url: baseUrl + 'admin/user/search',
             placeholder: 'Rechercher un utilisateur...',
             searchFields: 'username',
+            delay: 250
+        });
+
+        //Initialisation dés le départ de nos Select pour ingrédient
+        initAjaxSelect2('#zone-ingredients .select-ingredient', {
+            url: baseUrl + 'admin/ingredient/search',
+            placeholder: 'Rechercher un ingrédient...',
+            searchFields: 'name,description',
+            showDescription: true,
+            delay: 250
+        });
+        initAjaxSelect2('#zone-ingredients .select-unit', {
+            url: baseUrl + 'admin/unit/search',
+            placeholder: 'Rechercher une unité...',
+            searchFields: 'name',
             delay: 250
         });
 
