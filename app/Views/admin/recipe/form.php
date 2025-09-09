@@ -57,7 +57,9 @@ endif;
                     <div class="tab-pane fade show active" id="general-tab-pane" role="tabpanel">
                         <div class="mb-3">
                             <label class="form-label">Description globale de la recette</label>
-                            <textarea class="form-control" rows="3" id="description" name="description"></textarea>
+                            <textarea class="form-control" rows="3" id="description" name="description">
+                                <?= $recipe['description'] ?? ''; ?>
+                            </textarea>
                         </div>
                         <div>
                             <div class="form-check form-switch">
@@ -76,9 +78,9 @@ endif;
                         </div>
                         <div id="zone-ingredients">
                             <?php
-                            if(isset($ingredients)) :
+                            if(isset($recipe['ingredients'])) :
                                 $cpt_ing = 0;
-                                foreach($ingredients as $ingredient) :
+                                foreach($recipe['ingredients'] as $ingredient) :
                                     $cpt_ing++;
                                     ?>
                                     <div class="row mb-3 row-ingredient">
@@ -106,7 +108,18 @@ endif;
                     <!--END: INGREDIENTS -->
                     <!--START: MOTS CLÉS -->
                     <div class="tab-pane fade" id="keyword-tab-pane" role="tabpanel">
-                        MOTS CLES
+                        <div class="row row-cols-2 row-cols-md-4">
+                            <?php if(isset($tags)) :
+                                foreach($tags as $tag) :?>
+                                    <div class="form-check col mb-2">
+                                        <input class="form-check-input" type="checkbox" value="<?= $tag['id'] ?>" id="tag-<?= $tag['id'] ?>" name="tags[]" <?= (isset($recipe['tags']) && in_array($tag['id'], $recipe['tags'])) ? 'checked': ''; ?>>
+                                        <label for="tag-<?= $tag['id'] ?>" class="form-check-label">
+                                            <?= $tag['name'] ?>
+                                        </label>
+                                    </div>
+                                <?php endforeach;
+                            endif; ?>
+                        </div>
                     </div>
                     <!--END: MOTS CLÉS -->
                     <!--START: ÉTAPES -->
@@ -140,12 +153,12 @@ endif;
                     <button type="submit" class="btn btn-primary">Valider</button>
                 </div>
                 <?php if (isset($recipe)) :  ?>
-                    <div class="ms-2">
+                    <div class="ms-2 mb-3">
                         <div>
-                            <span class="fw-bold">Créée le: </span>
+                            <span class="fw-bold">Créée le: </span><?= $recipe['created_at'] ?>
                         </div>
                         <div>
-                            <span class="fw-bold">Modifiée le: </span>
+                            <span class="fw-bold">Modifiée le: </span><?= $recipe['updated_at'] ?>
                         </div>
                     </div>
                 <?php endif; ?>

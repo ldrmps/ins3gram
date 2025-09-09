@@ -39,4 +39,5 @@ class TagModel extends Model
             'select' => '*',
         ];
     }
+
 }
