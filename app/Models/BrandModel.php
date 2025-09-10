@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use CodeIgniter\Model;
+use App\Traits\Select2Searchable;
 use App\Traits\DataTableTrait;
 class BrandModel extends Model
 {
+    use Select2Searchable;
     use DataTableTrait;
     protected $table            = 'brand';
     protected $primaryKey       = 'id';
@@ -38,4 +40,6 @@ class BrandModel extends Model
             'select' => '*',
         ];
     }
+    protected $select2SearchFields = ['name'];
+    protected $select2DisplayField = 'name';
 }

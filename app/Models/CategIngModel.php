@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use App\Traits\DataTableTrait;
+use App\Traits\Select2Searchable;
 use CodeIgniter\Model;
 
 class CategIngModel extends Model
 {
+    use Select2Searchable;
     use DataTableTrait;
     protected $table            = 'categ_ing';
     protected $primaryKey       = 'id';
@@ -50,4 +52,6 @@ class CategIngModel extends Model
             'select' => 'categ_ing.*, parent_categ.name as parent_name',
         ];
     }
+    protected $select2SearchFields = ['name'];
+    protected $select2DisplayField = 'name';
 }
