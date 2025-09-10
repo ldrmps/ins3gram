@@ -33,9 +33,16 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->post('update', 'Brand::update');
         $routes->post('insert', 'Brand::insert');
         $routes->post('delete', 'Brand::delete');
+        $routes->get('search', 'Brand::search');
     });
 
     $routes->group('ingredient', function ($routes) {
+        $routes->get('/', 'Ingredient::index');
+        $routes->get('(:num)', 'Ingredient::edit/$1');
+        $routes->get('new', 'Ingredient::create');
+        $routes->post('update', 'Ingredient::update');
+        $routes->post('insert', 'Ingredient::insert');
+        $routes->post('delete', 'Ingredient::delete');
         $routes->get('search', 'Ingredient::search');
     });
 
@@ -55,5 +62,6 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->post('update', 'CategIng::update');
         $routes->post('insert', 'CategIng::insert');
         $routes->post('delete', 'CategIng::delete');
+        $routes->get('search', 'CategIng::search');
     });
 });

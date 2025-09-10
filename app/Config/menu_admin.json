@@ -15,6 +15,11 @@
     "title": "Ingrédients",
     "icon": "<i class=\"nav-icon fas fa-clipboard-list\"></i>",
     "subs": {
+      "ingredient": {
+        "title": "Ingrédients",
+        "url": "/admin/ingredient",
+        "icon": "<i class=\"nav-icon fas fa-boxes-stacked\"></i>"
+      },
       "category": {
         "title": "Catégories",
         "url": "/admin/category-ingredient",
