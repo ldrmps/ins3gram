@@ -79,6 +79,21 @@ class Recipe extends BaseController
                     }
                 }
             }
+
+            if(isset($data['steps'])) {
+                $sm = Model('StepModel');
+                foreach($data['steps'] as $order => $step) {
+                    $step['id_recipe'] = $id_recipe;
+                    $step['order'] = $order;
+                    if ($sm->insert($step)) {
+                        $this->success('Étape ajoutée avec succès à la recette !');
+                    } else {
+                        foreach($sm->errors() as $error){
+                            $this->error($error);
+                        }
+                    }
+                }
+            }
         } else {
             foreach($rm->errors() as $error){
                 $this->error($error);
@@ -93,22 +108,6 @@ class Recipe extends BaseController
         $rm = Model('RecipeModel');
         if($rm->update($id_recipe,$data)){
             $this->success('Recette modifiée avec succès !');
-            //Gestion des ingredients
-            $qm = Model('QuantityModel');
-            if($qm->where('id_recipe',$id_recipe)->delete()){
-                if(isset($data['ingredients'])) {
-                    foreach($data['ingredients'] as $ingredient) {
-                        $ingredient['id_recipe'] = $id_recipe;
-                        if ($qm->insert($ingredient)) {
-                            $this->success('Ingrédient ajouté avec succès !');
-                        } else {
-                            foreach($qm->errors() as $error){
-                                $this->error($error);
-                            }
-                        }
-                    }
-                }
-            }
             //Gestion des mots clés
             $trm = Model('TagRecipeModel');
             if($trm->where('id_recipe',$id_recipe)->delete()){

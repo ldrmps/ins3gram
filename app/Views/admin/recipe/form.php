@@ -124,7 +124,14 @@ endif;
                     <!--END: MOTS CLÉS -->
                     <!--START: ÉTAPES -->
                     <div class="tab-pane fade" id="step-tab-pane" role="tabpanel">
-                        ETAPES
+                        <div class="mb-3">
+                            <span class="btn btn-primary" id="add-step">
+                                <i class="fas fa-plus"></i> Ajouter une étape
+                            </span>
+                        </div>
+                        <div class="accordion" id="zone-steps">
+
+                        </div>
                     </div>
                     <!--END: ÉTAPES -->
                     <?php if(isset($recipe)) : ?>
@@ -192,6 +199,8 @@ endif;
         });
         //Compteur pour nos ingrédients
         let cpt_ing = $('#zone-ingredients .row-ingredient').length;
+        //Compteur pour nos étapes
+        let cpt_step = $('#zone-steps .accordion-item').length;
         //url pour les requetes Ajax
         baseUrl = "<?= base_url(); ?>";
 
@@ -233,6 +242,27 @@ endif;
         $('#zone-ingredients').on('click','.supp-ingredient',function() {
             $(this).closest('.row-ingredient').remove();
         });
+        //Action du clique sur l'ajout d'une étape
+        $('#add-step').on('click', function() {
+            cpt_step++;
+            $("#zone-steps .accordion-button").addClass('collapsed');
+            $("#zone-steps .show").removeClass('show');
+            let step = `
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step-${cpt_step}" aria-expanded="true" aria-controls="step-${cpt_step}">
+                    Étape #${cpt_step}
+                  </button>
+                </h2>
+                <div id="step-${cpt_step}" class="accordion-collapse collapse show" data-bs-parent="#zone-steps">
+                  <div class="accordion-body">
+                    <textarea class="form-control" name='steps[${cpt_step}][description]' required></textarea>
+                  </div>
+                </div>
+              </div>
+            `;
+            $('#zone-steps').append(step);
+        });
 
         //Ajout de SELECT2 à notre select user
         initAjaxSelect2('#id_user', {
@@ -241,7 +271,6 @@ endif;
             searchFields: 'username',
             delay: 250
         });
-
         //Initialisation dés le départ de nos Select pour ingrédient
         initAjaxSelect2('#zone-ingredients .select-ingredient', {
             url: baseUrl + 'admin/ingredient/search',
