@@ -130,7 +130,23 @@ endif;
                             </span>
                         </div>
                         <div class="accordion" id="zone-steps">
-
+                            <?php if (isset($recipe['steps'])) : ?>
+                                <?php foreach($recipe['steps'] as $step) : ?>
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header d-flex">
+                                            <i class="fas fa-arrows-up-down fa-2xs sort-handle align-self-center p-3"></i>
+                                            <button class="accordion-button flex-fill collapsed" data-bs-toggle="collapse" data-bs-target="#step-<?= $step['order']; ?>" type="button">
+                                                Étape #<?= $step['order']; ?>
+                                            </button>
+                                        </h2>
+                                        <div id="step-<?= $step['order']; ?>" class="accordion-collapse collapse" data-bs-parent="#zone-steps">
+                                            <div class="accordion-body">
+                                                <textarea class="form-control" id="steptextarea-step-<?= $step['order']; ?>" name='steps[<?= $step['order']; ?>][description]'><?= $step['description'] ?></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <!--END: ÉTAPES -->
@@ -182,21 +198,10 @@ endif;
 <?php echo form_close(); ?>
 <script>
     $(document).ready(function () {
-        //Activation de TinyMCE pour la description
-        tinymce.init({
-            selector: '#description',
-            height : "200",
-            language: 'fr_FR',
-            menubar: false,
-            plugins: [
-                'preview', 'code', 'fullscreen','wordcount', 'link','lists',
-            ],
-            skin: 'oxide',
-            content_encoding: 'text',
-            toolbar: 'undo redo | formatselect | ' +
-                'bold italic link forecolor backcolor removeformat | alignleft aligncenter ' +
-                'alignright alignjustify | bullist numlist outdent indent | ' +' fullscreen  preview code'
-        });
+        //Activation de TinyMCE
+        initTinymce("#description");
+        initTinymce("#zone-steps textarea");
+
         //Compteur pour nos ingrédients
         let cpt_ing = $('#zone-ingredients .row-ingredient').length;
         //Compteur pour nos étapes
@@ -249,19 +254,21 @@ endif;
             $("#zone-steps .show").removeClass('show');
             let step = `
             <div class="accordion-item">
-                <h2 class="accordion-header">
-                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#step-${cpt_step}" aria-expanded="true" aria-controls="step-${cpt_step}">
+                <h2 class="accordion-header d-flex">
+                  <i class="fas fa-arrows-up-down fa-2xs sort-handle align-self-center p-3"></i>
+                  <button class="accordion-button flex-fill" data-bs-toggle="collapse" data-bs-target="#step-${cpt_step}" type="button">
                     Étape #${cpt_step}
                   </button>
                 </h2>
                 <div id="step-${cpt_step}" class="accordion-collapse collapse show" data-bs-parent="#zone-steps">
                   <div class="accordion-body">
-                    <textarea class="form-control" name='steps[${cpt_step}][description]' required></textarea>
+                    <textarea class="form-control" id="steptextarea-step-${cpt_step}" name='steps[${cpt_step}][description]'></textarea>
                   </div>
                 </div>
               </div>
             `;
             $('#zone-steps').append(step);
+            initTinymce("#steptextarea-step-"+cpt_step);
         });
 
         //Ajout de SELECT2 à notre select user
@@ -285,6 +292,99 @@ endif;
             searchFields: 'name',
             delay: 250
         });
+        // Rendre les étapes réordonnables
+        $('#zone-steps').sortable({
+            handle: '.sort-handle',
+            placeholder: 'ui-state-highlight',
+            cursor: 'move',
+            opacity: 0.8,
+            axis: 'y',
+            containment: '#zone-steps',
+            tolerance: 'pointer',
+            helper: function(e, ui) {
+                $("#zone-steps .accordion-collapse.show").removeClass('show');
+                $("#zone-steps .accordion-button").addClass('collapsed');
+                return ui.clone();
+            },
+            update: function(event, ui) {
+                let $items = $('#zone-steps .accordion-item');
 
+                $items.each(function(index) {
+                    let $item = $(this);
+
+                    // Utiliser setTimeout pour décaler chaque itération
+                    setTimeout(function() {
+                        let newIndex = index + 1;
+                        let $button = $item.find('.accordion-button');
+                        let $collapse = $item.find('.accordion-collapse');
+                        let $textarea = $item.find('textarea');
+
+                        // Mettre à jour le texte du bouton
+                        $button.fadeOut(400, function() {
+                            $(this).text('Étape #' + newIndex).fadeIn(400);
+                        });
+
+                        // Mettre à jour les IDs et attributs
+                        let newId = 'step-' + newIndex;
+                        $collapse.attr('id', newId);
+                        $button.attr('data-bs-target', '#' + newId);
+                        $button.attr('aria-controls', newId);
+
+                        // Mettre à jour le nom du textarea
+                        $textarea.attr('name', 'steps[' + newIndex + '][description]');
+                    }, index * 200); // 300ms * numéro d’itération
+                });
+            },
+            stop: function(event, ui) {
+                let $button = ui.item.find('.accordion-button');
+                let $collapse = ui.item.find('.accordion-collapse');
+
+                $button.removeClass('collapsed');
+                $collapse.addClass('show');
+            }
+        });
     });
 </script>
+<style>
+    .sort-handle {
+        cursor: move !important;
+        color: #6c757d;
+        transition: color 0.3s;
+        display: flex;
+        align-items: center;
+    }
+
+    .sort-handle:hover {
+        color: #007bff !important;
+    }
+
+
+    .ui-sortable-helper {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        background: white;
+        border-radius: 0.375rem;
+    }
+
+    .ui-sortable-placeholder {
+        background-color: rgba(88, 86, 214, 0.2) !important;
+        border: 2px dashed #4b49b6 !important;
+        margin-bottom: 1rem;
+        border-radius: 0.375rem;
+        visibility: visible !important;
+        height: 60px;
+    }
+
+    .ui-sortable-placeholder * {
+        visibility: hidden;
+    }
+
+    #zone-steps {
+        min-height: 50px;
+    }
+
+    /* Animation pour le drag */
+    .ui-sortable-helper .accordion-collapse {
+        display: none !important;
+    }
+</style>

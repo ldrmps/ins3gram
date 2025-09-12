@@ -30,14 +30,15 @@ class Recipe extends BaseController
             $this->error('Recette introuvable');
             return $this->redirect('/admin/recipe');
         }
-        $qm = Model('QuantityModel');
-        $ingredients = $qm->getQuantityByRecipe($id_recipe);
+        $ingredients = Model('QuantityModel')->getQuantityByRecipe($id_recipe);
         $tags = Model('TagModel')->findAll();
         $recipe['ingredients'] = $ingredients;
         $recipe_tags = Model('TagRecipeModel')->where('id_recipe',$id_recipe)->findAll();
         foreach($recipe_tags as $recipe_tag) {
             $recipe['tags'][] = $recipe_tag['id_tag'];
         }
+        $steps = Model('StepModel')->where('id_recipe',$id_recipe)->orderBy('order', 'ASC')->findAll();
+        $recipe['steps'] = $steps;
         return $this->view('admin/recipe/form', ['tags' => $tags,'recipe' => $recipe]);
     }
 
