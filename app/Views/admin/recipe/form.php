@@ -63,7 +63,7 @@ endif;
                         </div>
                         <div>
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" id="switchAlcool" name="alcool" checked>
+                                <input class="form-check-input" type="checkbox" role="switch" id="switchAlcool" name="alcool" <?= isset($recipe['alcool']) && $recipe['alcool'] ? 'checked' : '' ?>>
                                 <label class="form-check-label" for="switchAlcool">Avec Alcool</label>
                             </div>
                         </div>
