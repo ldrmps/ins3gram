@@ -15,7 +15,7 @@ endif;
                     <input type="text" class="form-control" id="name" placeholder="Nom de la recette" name="name" value="<?= isset($recipe) ? $recipe['name'] : '' ?>" required>
                 </div>
                 <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="switchActive" name="active">
+                    <input class="form-check-input" type="checkbox" role="switch" id="switchActive" name="active" <?= isset($recipe) && $recipe['deleted_at'] ? '': 'checked'; ?> >
                     <label class="form-check-label" for="switchActive">Active</label>
                 </div>
             </div>
@@ -33,20 +33,20 @@ endif;
                         <a href="#" class="nav-link active" data-bs-toggle="tab" data-bs-target="#general-tab-pane">Général</a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#ingredient-tab-pane">Ingrédients</a>
+                        <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#ingredient-tab-pane">Ingrédients <span id="badge-ingredient" class="badge rounded-pill text-bg-primary"><?= (isset($recipe['ingredients'])) ? count($recipe['ingredients']) : '0' ;?></span></a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#keyword-tab-pane">Mots Clés</a>
+                        <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#tag-tab-pane">Mots Clés <span id="badge-tag" class="badge rounded-pill text-bg-primary"><?= (isset($recipe['tags'])) ? count($recipe['tags']) : '0' ;?></span></a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#step-tab-pane">Étapes</a>
+                        <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#step-tab-pane">Étapes <span  id="badge-step" class="badge rounded-pill text-bg-primary"><?= (isset($recipe['steps'])) ? count($recipe['steps']) : '0' ;?></span></a>
                     </li>
                     <?php if(isset($recipe)) : ?>
                         <li class="nav-item">
-                            <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#comment-tab-pane">Commentaires</a>
+                            <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#opinion-tab-pane">Commentaires <span id="badge-opinion" class="badge rounded-pill text-bg-primary"><?= (isset($recipe['opinions'])) ? count($recipe['opinions']) : '0' ;?></span></a>
                         </li>
                         <li class="nav-item">
-                            <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#fav-tab-pane">Favoris</a>
+                            <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#fav-tab-pane">Favoris <span id="badge-fav" class="badge rounded-pill text-bg-primary"><?= (isset($recipe['fav'])) ? count($recipe['fav']) : '0' ;?></span></a>
                         </li>
                     <?php endif; ?>
                 </ul>
@@ -107,15 +107,24 @@ endif;
                     </div>
                     <!--END: INGREDIENTS -->
                     <!--START: MOTS CLÉS -->
-                    <div class="tab-pane fade" id="keyword-tab-pane" role="tabpanel">
+                    <div class="tab-pane fade" id="tag-tab-pane" role="tabpanel">
+                        <div class="row">
+                            <!-- Champ de recherche -->
+                            <div class="col">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text" id="basic-addon1"><i class="fas fa-magnifying-glass"></i></span>
+                                    <input type="text" id="search-tag" class="form-control" placeholder="Rechercher un mot clé">
+                                </div>
+                            </div>
+                        </div>
                         <div class="row row-cols-2 row-cols-md-4">
                             <?php if(isset($tags)) :
                                 foreach($tags as $tag) :?>
-                                    <div class="form-check col mb-2">
-                                        <input class="form-check-input" type="checkbox" value="<?= $tag['id'] ?>" id="tag-<?= $tag['id'] ?>" name="tags[]" <?= (isset($recipe['tags']) && in_array($tag['id'], $recipe['tags'])) ? 'checked': ''; ?>>
-                                        <label for="tag-<?= $tag['id'] ?>" class="form-check-label">
-                                            <?= $tag['name'] ?>
-                                        </label>
+                                    <div class="col mb-2 tag">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="<?= $tag['id'] ?>" id="tag-<?= $tag['id'] ?>" name="tags[]" <?= (isset($recipe['tags']) && in_array($tag['id'], $recipe['tags'])) ? 'checked': ''; ?>>
+                                            <label for="tag-<?= $tag['id'] ?>" class="form-check-label"><?= $tag['name'] ?></label>
+                                        </div>
                                     </div>
                                 <?php endforeach;
                             endif; ?>
@@ -141,6 +150,7 @@ endif;
                                         </h2>
                                         <div id="step-<?= $step['order']; ?>" class="accordion-collapse collapse" data-bs-parent="#zone-steps">
                                             <div class="accordion-body">
+                                                <input type="hidden" value="<?= $step['id']; ?>" name="steps[<?= $step['order']; ?>][id]">
                                                 <textarea class="form-control" id="steptextarea-step-<?= $step['order']; ?>" name='steps[<?= $step['order']; ?>][description]'><?= $step['description'] ?></textarea>
                                             </div>
                                         </div>
@@ -152,7 +162,7 @@ endif;
                     <!--END: ÉTAPES -->
                     <?php if(isset($recipe)) : ?>
                         <!--START: COMMENTAIRES -->
-                        <div class="tab-pane fade" id="comment-tab-pane" role="tabpanel">
+                        <div class="tab-pane fade" id="opinion-tab-pane" role="tabpanel">
                             COMMENTAIRES
                         </div>
                         <!--END: COMMENTAIRES -->
@@ -186,8 +196,19 @@ endif;
                     </div>
                 <?php endif; ?>
                 <div>
+                    <?php
+                    if(isset($recipe['user'])){
+                        $id = $recipe['user']->id;
+                        $username = $recipe['user']->username;
+                    } else {
+                        $session = session();
+                        $id = $session->user->id;
+                        $username = $session->user->username;
+                    }
+                    ?>
                     <label for="id_user" class="form-label">Créateur</label>
                     <select class="form-select" id="id_user" name="id_user">
+                        <option value="<?= $id ?>" selected><?= $username ?></option>
                     </select>
                 </div>
             </div>
@@ -212,6 +233,7 @@ endif;
         //Action du clique sur l'ajout d'un ingrédient
         $('#add-ingredient').on('click', function () {
             cpt_ing++; //augmente le compteur de 1
+            $('#badge-ingredient').html(parseInt($('#badge-ingredient').html())+1);
             let row = `
                 <div class="row mb-3 row-ingredient">
                     <div class="col">
@@ -246,10 +268,12 @@ endif;
         //Action du bouton de suppression des ingrédients
         $('#zone-ingredients').on('click','.supp-ingredient',function() {
             $(this).closest('.row-ingredient').remove();
+            $('#badge-ingredient').html(parseInt($('#badge-ingredient').html())-1);
         });
         //Action du clique sur l'ajout d'une étape
         $('#add-step').on('click', function() {
             cpt_step++;
+            $('#badge-step').html(parseInt($('#badge-step').html())+1);
             $("#zone-steps .accordion-button").addClass('collapsed');
             $("#zone-steps .show").removeClass('show');
             let step = `
@@ -270,7 +294,27 @@ endif;
             $('#zone-steps').append(step);
             initTinymce("#steptextarea-step-"+cpt_step);
         });
-
+        //Action de la recherche de mot clés
+        $('#search-tag').on('input', function() {
+            let search = $(this).val().toLowerCase();
+            $('.tag').each(function () {
+                let tagText = $(this).find('label').text().toLowerCase();
+                if(tagText.includes(search)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+        //Action sur la selection d'un mot clés
+        $('.tag .form-check-input').on('change', function() {
+            let badge = $('#badge-tag');
+            if($(this).is(':checked')) {
+                badge.html(parseInt(badge.html()) + 1);
+            } else {
+                badge.html(parseInt(badge.html()) - 1);
+            }
+        });
         //Ajout de SELECT2 à notre select user
         initAjaxSelect2('#id_user', {
             url: baseUrl + 'admin/user/search',
@@ -343,6 +387,8 @@ endif;
                 $collapse.addClass('show');
             }
         });
+
+
     });
 </script>
 <style>

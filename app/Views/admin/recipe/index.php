@@ -42,19 +42,37 @@
             columns: [
                 { data: 'id' },
                 { data: 'name' },
-                { data: 'id_user' },
-                { data: 'updated_at' },
-                { data: 'deleted_at' },
+                { data: 'creator',
+                    render : function(data, type, row, meta) {
+                        return `<a class=" link-underline link-underline-opacity-0" href=<?= base_url('admin/user/') ?>${row.id_user}>${data}</a>`
+                    }
+                },
+                { data: 'updated_at',
+                    render : function(data, type, row, meta) {
+                        let date = new Date(data);
+                        return date.toLocaleDateString("fr") + " " + date.toLocaleTimeString("fr");
+                    }
+                },
+                {
+                    data: 'deleted_at',
+                    render: function(data, type, row) {
+                        if (data === 'active' || row.deleted_at === null) {
+                            return '<span class="badge text-bg-success">Active</span>';
+                        } else {
+                            return '<span class="badge text-bg-danger">Inactive</span>';
+                        }
+                    }
+                },
                 {
                     data: null,
                     orderable: false,
                     render: function(data, type, row) {
                         return `
                             <div class="btn-group" role="group">
-                                <a href="<?= base_url('admin/recipe/') ?>${row.id}") class="btn btn-sm btn-warning" title="Modifier">
+                                <a href="<?= base_url('admin/recipe/') ?>${row.id}") class="btn btn-sm btn-warning text-white" title="Modifier">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <button onclick="deleteBrand(${row.id})" class="btn btn-sm btn-danger" title="Supprimer">
+                                <button onclick="deleteBrand(${row.id})" class="btn btn-sm btn-danger text-white" title="Supprimer">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
