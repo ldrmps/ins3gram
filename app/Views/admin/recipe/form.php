@@ -153,6 +153,9 @@ endif;
                                             <div class="accordion-body">
                                                 <input type="hidden" value="<?= $step['id']; ?>" name="steps[<?= $step['order']; ?>][id]">
                                                 <textarea class="form-control" id="steptextarea-step-<?= $step['order']; ?>" name='steps[<?= $step['order']; ?>][description]'><?= $step['description'] ?></textarea>
+                                                <div class="d-flex justify-content-end mt-3">
+                                                    <i title="Supprimer l'étape" class="fas fa-xl fa-trash-alt text-danger supp-step"></i>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -294,6 +297,9 @@ endif;
                 <div id="step-${cpt_step}" class="accordion-collapse collapse show" data-bs-parent="#zone-steps">
                   <div class="accordion-body">
                     <textarea class="form-control" id="steptextarea-step-${cpt_step}" name='steps[${cpt_step}][description]'></textarea>
+                    <div class="d-flex justify-content-end mt-3">
+                        <i title="Supprimer l'étape" class="fas fa-xl fa-trash-alt text-danger supp-step"></i>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -395,30 +401,34 @@ endif;
 
             $items.each(function(index) {
                 let $item = $(this);
-                let newIndex = index + 1;
-                let $button = $item.find('.accordion-button');
-                let $collapse = $item.find('.accordion-collapse');
-                let $textarea = $item.find('textarea');
-                let $hiddenInput = $item.find('input[type="hidden"]');
+                setTimeout(function() {
+                    let newIndex = index + 1;
+                    let $button = $item.find('.accordion-button');
+                    let $collapse = $item.find('.accordion-collapse');
+                    let $textarea = $item.find('textarea');
+                    let $hiddenInput = $item.find('input[type="hidden"]');
 
-                // Mettre à jour le texte du bouton
-                $button.text('Étape #' + newIndex);
+                    // Mettre à jour le texte du bouton
+                    $button.fadeOut(400, function() {
+                        $(this).text('Étape #' + newIndex).fadeIn(400);
+                    });
 
-                // Nouveaux IDs
-                let newId = 'step-' + newIndex;
-                let newTextareaId = 'steptextarea-step-' + newIndex;
+                    // Nouveaux IDs
+                    let newId = 'step-' + newIndex;
+                    let newTextareaId = 'steptextarea-step-' + newIndex;
 
-                // Mettre à jour les attributs
-                $collapse.attr('id', newId);
-                $button.attr('data-bs-target', '#' + newId);
-                $button.attr('aria-controls', newId);
-                $textarea.attr('name', 'steps[' + newIndex + '][description]');
-                $textarea.attr('id', newTextareaId);
+                    // Mettre à jour les attributs
+                    $collapse.attr('id', newId);
+                    $button.attr('data-bs-target', '#' + newId);
+                    $button.attr('aria-controls', newId);
+                    $textarea.attr('name', 'steps[' + newIndex + '][description]');
+                    $textarea.attr('id', newTextareaId);
 
-                // Mettre à jour le champ hidden s'il existe
-                if ($hiddenInput.length > 0) {
-                    $hiddenInput.attr('name', 'steps[' + newIndex + '][id]');
-                }
+                    // Mettre à jour le champ hidden s'il existe
+                    if ($hiddenInput.length > 0) {
+                        $hiddenInput.attr('name', 'steps[' + newIndex + '][id]');
+                    }
+                }, index * 200);
             });
         }
 
@@ -465,5 +475,9 @@ endif;
     /* Animation pour le drag */
     .ui-sortable-helper .accordion-collapse {
         display: none !important;
+    }
+
+    .supp-ingredient, .supp-step {
+        cursor: pointer;
     }
 </style>
