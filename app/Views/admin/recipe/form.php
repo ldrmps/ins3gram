@@ -97,6 +97,7 @@ endif;
                                                     <option value="<?= $ingredient['id_unit'] ?>" selected><?= $ingredient['unit'] ?></option>
                                                 </select>
                                             </div>
+
                                         </div>
                                     </div>
                                 <?php
@@ -270,6 +271,12 @@ endif;
             $(this).closest('.row-ingredient').remove();
             $('#badge-ingredient').html(parseInt($('#badge-ingredient').html())-1);
         });
+        //Action du bouton de suppression des étapes
+        $('#zone-steps').on('click', '.supp-step', function() {
+            $(this).closest('.accordion-item').remove();
+            reorganizeStepsNumbers();
+            $('#badge-step').html(parseInt($('#badge-step').html())-1);
+        })
         //Action du clique sur l'ajout d'une étape
         $('#add-step').on('click', function() {
             cpt_step++;
@@ -345,49 +352,75 @@ endif;
             axis: 'y',
             containment: '#zone-steps',
             tolerance: 'pointer',
+
             helper: function(e, ui) {
                 $("#zone-steps .accordion-collapse.show").removeClass('show');
                 $("#zone-steps .accordion-button").addClass('collapsed');
-                return ui.clone();
+
+                // Helper minimal pour éviter les conflits
+                let $helper = $('<div class="accordion-item" style="background: #f8f9fa; border: 2px dashed #007bff;"><div style="padding: 15px;">Déplacement de l\'étape...</div></div>');
+                return $helper;
             },
-            update: function(event, ui) {
-                let $items = $('#zone-steps .accordion-item');
 
-                $items.each(function(index) {
-                    let $item = $(this);
-
-                    // Utiliser setTimeout pour décaler chaque itération
-                    setTimeout(function() {
-                        let newIndex = index + 1;
-                        let $button = $item.find('.accordion-button');
-                        let $collapse = $item.find('.accordion-collapse');
-                        let $textarea = $item.find('textarea');
-
-                        // Mettre à jour le texte du bouton
-                        $button.fadeOut(400, function() {
-                            $(this).text('Étape #' + newIndex).fadeIn(400);
-                        });
-
-                        // Mettre à jour les IDs et attributs
-                        let newId = 'step-' + newIndex;
-                        $collapse.attr('id', newId);
-                        $button.attr('data-bs-target', '#' + newId);
-                        $button.attr('aria-controls', newId);
-
-                        // Mettre à jour le nom du textarea
-                        $textarea.attr('name', 'steps[' + newIndex + '][description]');
-                    }, index * 200); // 300ms * numéro d’itération
-                });
-            },
+            // Tout se passe après le stop pour éviter les perturbations
             stop: function(event, ui) {
+                // Sauvegarder TinyMCE avant manipulations
+                $('#zone-steps textarea').each(function() {
+                    let textareaId = $(this).attr('id');
+                    let editor = tinymce.get(textareaId);
+                    if (editor) {
+                        editor.save();
+                        editor.destroy();
+                    }
+                });
+
+                // Utiliser la fonction commune
+                reorganizeStepsNumbers();
+
+                // Rouvrir l'accordéon déplacé
                 let $button = ui.item.find('.accordion-button');
                 let $collapse = ui.item.find('.accordion-collapse');
-
                 $button.removeClass('collapsed');
                 $collapse.addClass('show');
+
+                // Réinitialiser TinyMCE
+                setTimeout(() => {
+                    initTinymce("#zone-steps textarea");
+                }, 200);
             }
         });
+        // Fonction commune pour réorganiser les numéros et attributs des étapes
+        function reorganizeStepsNumbers() {
+            let $items = $('#zone-steps .accordion-item');
 
+            $items.each(function(index) {
+                let $item = $(this);
+                let newIndex = index + 1;
+                let $button = $item.find('.accordion-button');
+                let $collapse = $item.find('.accordion-collapse');
+                let $textarea = $item.find('textarea');
+                let $hiddenInput = $item.find('input[type="hidden"]');
+
+                // Mettre à jour le texte du bouton
+                $button.text('Étape #' + newIndex);
+
+                // Nouveaux IDs
+                let newId = 'step-' + newIndex;
+                let newTextareaId = 'steptextarea-step-' + newIndex;
+
+                // Mettre à jour les attributs
+                $collapse.attr('id', newId);
+                $button.attr('data-bs-target', '#' + newId);
+                $button.attr('aria-controls', newId);
+                $textarea.attr('name', 'steps[' + newIndex + '][description]');
+                $textarea.attr('id', newTextareaId);
+
+                // Mettre à jour le champ hidden s'il existe
+                if ($hiddenInput.length > 0) {
+                    $hiddenInput.attr('name', 'steps[' + newIndex + '][id]');
+                }
+            });
+        }
 
     });
 </script>

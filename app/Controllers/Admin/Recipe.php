@@ -30,7 +30,7 @@ class Recipe extends BaseController
             $this->error('Recette introuvable');
             return $this->redirect('/admin/recipe');
         }
-        $user = Model('userModel')->withDeleted()->find($recipe['id_user']);
+        $user = Model('UserModel')->withDeleted()->find($recipe['id_user']);
         unset($recipe['id_user']);
         $recipe['user'] = $user;
         $ingredients = Model('QuantityModel')->getQuantityByRecipe($id_recipe);
@@ -113,7 +113,6 @@ class Recipe extends BaseController
 
     public function update() {
         $data = $this->request->getPost();
-        echo "<pre>"; print_r($data); echo "</pre>";die();
         $id_recipe = $data['id_recipe'];
         $rm = Model('RecipeModel');
         if($rm->update($id_recipe,$data)){
@@ -151,7 +150,8 @@ class Recipe extends BaseController
             }
 
             if(isset($data['steps'])) {
-                $existing_steps = Model('StepModel')->where('id_recipe',$id_recipe)->findAll();
+                $sm = Model('StepModel');
+                $existing_steps = $sm->where('id_recipe',$id_recipe)->findAll();
                 $check_existing_steps = array();
                 foreach($existing_steps as $step) {
                     $check_existing_steps[] = $step['id'];
@@ -160,15 +160,42 @@ class Recipe extends BaseController
                     //Pas d'ID alors c'est un ajout
                     if(!isset($step['id'])) {
                         //insert
+                        $step['id_recipe'] = $id_recipe;
+                        $step['order'] = $order;
+                        if ($sm->insert($step)) {
+                            $this->success('Étape ajoutée avec succès à la recette !');
+                        } else {
+                            foreach($sm->errors() as $error){
+                                $this->error($error);
+                            }
+                        }
                     } else {
                         //Si j'ai un ID et qu'il est présent dans ma BDD c'est une modification
-                        if(in_array($step['id'], $check_existing_steps)) {
+                        if(($key = array_search($step['id'], $check_existing_steps)) !== FALSE) {
                             //update + unset(id)
+                            $step['order'] = $order;
+                            if ($sm->update($step['id'],$step)) {
+                                $this->success('Étape modifiée avec succès !');
+                            } else {
+                                foreach($sm->errors() as $error){
+                                    $this->error($error);
+                                }
+                            }
+                            unset($check_existing_steps[$key]);
                         }
                     }
                 }
                 foreach($check_existing_steps as $id) {
                     //delete
+                    foreach($check_existing_steps as $id_step) {
+                        if($sm->delete($id_step)) {
+                            $this->success('Étape supprimée avec succès !');
+                        } else {
+                            foreach($sm->errors() as $error){
+                                $this->error($error);
+                            }
+                        }
+                    }
                 }
             } else {
 
