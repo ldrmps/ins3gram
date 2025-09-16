@@ -23,7 +23,7 @@ class MediaModel extends Model
     protected $validationRules = [
         'file_path'   => 'required|string|is_unique[media.file_path,id,{id}]',
         'entity_id'   => 'required|integer',
-        'entity_type' => 'required|in_list[user,recipe,step,ingredient,brand]',
+        'entity_type' => 'required|in_list[user,recipe,recipe_mea,step,ingredient,brand]',
         'title'       => 'permit_empty|max_length[255]',
         'alt'         => 'permit_empty|max_length[255]',
     ];

@@ -17,12 +17,27 @@ class Brand extends BaseController
 
     public function insert()
     {
-        $upm = model('BrandModel');
+        $bm = model('BrandModel');
         $data = $this->request->getPost();
-        if ($upm->insert($data)) {
+        $image = $this->request->getFile('image');
+        if ($id_brand = $bm->insert($data)) {
             $this->success('Marque bien créée');
+            if($image && $image->getError() !== UPLOAD_ERR_NO_FILE){
+                $mediaData = [
+                    'entity_type' => 'brand',
+                    'entity_id' => $id_brand,
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+                // Utiliser la fonction upload_file() de l'utils_helper pour gérer l'upload et les données du média
+                $uploadResult = upload_file($image, 'brand', $image->getName(), $mediaData,false);
+                // Vérifier le résultat de l'upload
+                if (is_array($uploadResult) && $uploadResult['status'] === 'error') {
+                    // Afficher un message d'erreur détaillé
+                    $this->error("Une erreur est survenue lors de l'upload de l'image : " . $uploadResult['message']);
+                }
+            }
         } else {
-            foreach ($upm->errors() as $error) {
+            foreach ($bm->errors() as $error) {
                 $this->error($error);
             }
         }
@@ -30,11 +45,11 @@ class Brand extends BaseController
     }
 
     public function update() {
-        $upm = model('BrandModel');
+        $bm = model('BrandModel');
         $data = $this->request->getPost();
         $id = $data['id'];
         unset($data['id']);
-        if ($upm->update($id, $data)) {
+        if ($bm->update($id, $data)) {
             return $this->response->setJSON([
                 'success' => true,
                 'message' => "La marque à été modifiée avec succés !",
@@ -42,15 +57,15 @@ class Brand extends BaseController
         } else {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => $upm->errors(),
+                'message' => $bm->errors(),
             ]);
         }
     }
 
     public function delete() {
-        $upm = model('BrandModel');
+        $bm = model('BrandModel');
         $id = $this->request->getPost('id');
-        if ($upm->delete($id)) {
+        if ($bm->delete($id)) {
             return $this->response->setJSON([
                 'success' => true,
                 'message' => "La marque à été supprimée avec succés !",
@@ -58,7 +73,7 @@ class Brand extends BaseController
         } else {
             return $this->response->setJSON([
                 'success' => false,
-                'message' => $upm->errors(),
+                'message' => $bm->errors(),
             ]);
         }
     }

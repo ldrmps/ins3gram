@@ -62,9 +62,4 @@
 
 <?php if (isset($menus)) {
     echo view($template_path . 'header',['menus' => $menus]);  }  ?>
-<?php if (isset($mea)) { ?>
-    <img src="<?= base_url($mea) ?>" class="img-mea">
-<?php } else { ?>
-    <div style="margin-top: 125px"></div>
-<?php } ?>
 <div class="container">
