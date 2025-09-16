@@ -1,5 +1,10 @@
-<div class="min-height-page d-flex flex-row align-items-center">
+<div class=" d-flex flex-row align-items-center min-vh-100">
     <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <img class="img-fluid" src="<?= base_url('assets/img/logo-full-tristoune.png') ?>">
+            </div>
+        </div>
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="clearfix">
