@@ -1,6 +1,6 @@
 <?php
 if(!isset($recipe)) :
-    echo form_open('/admin/recipe/insert');
+    echo form_open_multipart('/admin/recipe/insert');
 else:
     echo form_open('/admin/recipe/update'); ?>
     <input type="hidden" name="id_recipe" value="<?= $recipe['id']; ?>">
@@ -214,6 +214,9 @@ endif;
                     <select class="form-select" id="id_user" name="id_user">
                         <option value="<?= $id ?>" selected><?= $username ?></option>
                     </select>
+                    <div class="mt-3">
+                        <input type="file" class="form-control" name="image">
+                    </div>
                 </div>
             </div>
         </div>

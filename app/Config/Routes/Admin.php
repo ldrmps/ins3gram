@@ -26,6 +26,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->get('new', 'Recipe::create');
         $routes->post('insert', 'Recipe::insert');
         $routes->post('update', 'Recipe::update');
+        $routes->post('delete','Ingredient::delete');
     });
 
     $routes->group('brand', function ($routes) {
@@ -63,5 +64,13 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->post('insert', 'CategIng::insert');
         $routes->post('delete', 'CategIng::delete');
         $routes->get('search', 'CategIng::search');
+    });
+
+    $routes->group('unit',function($routes){
+        $routes->get('search','Unit::search');
+        $routes->get('/','Unit::index');
+        $routes->post('update','Unit::update');
+        $routes->post('insert','Unit::insert');
+        $routes->post('delete','Unit::delete');
     });
 });

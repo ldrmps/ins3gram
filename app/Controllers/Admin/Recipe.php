@@ -48,10 +48,23 @@ class Recipe extends BaseController
     public function insert() {
         $data = $this->request->getPost();
         $rm = Model('RecipeModel');
+        $image = $this->request->getFile('image');
 
         //Ajout de ma recette + récupération de l'ID de ma recette ajouté
         if($id_recipe = $rm->insert($data, true)){
             $this->success('Recette créée avec succès !');
+            // Gestion de l'Upload
+            if($image && $image->getError() !== UPLOAD_ERR_NO_FILE){
+                $mediaData = [
+                    'entity_type' => 'recipe',
+                    'entity_id' => $id_recipe,
+                    'created_at' => date('Y-m-d H:i:s')
+                ];
+                $uploadResult = upload_file($image, 'brand', $image->getName(), $mediaData,false);
+                if (is_array($uploadResult) && $uploadResult['status'] === 'error') {
+                    $this->error("Une erreur est survenue lors de l'upload de l'image : " . $uploadResult['message']);
+                }
+            }
             //Gestion activation / désactivation
             if (!isset($data['active'])) {
                 $rm->delete($id_recipe);
