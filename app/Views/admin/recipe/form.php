@@ -71,7 +71,28 @@ endif;
                     <!--END:GENERAL -->
                     <!--START: IMAGES -->
                     <div class="tab-pane fade" id="image-tab-pane" role="tabpanel">
-
+                        <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 ">
+                            <?php
+                            if (isset($recipe['images'])) :
+                                foreach($recipe['images'] as $image) : ?>
+                                    <div class="col">
+                                        <div class="position-relative img-hover-delete">
+                                            <div class="position-absolute img-thumbnail" style="width: 100%; height: 100%; background-color: rgb(0,0,0,0.4); display: none;">
+                                                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                                                    <a href="" class="btn btn-danger text-light delete-img" data-id="<?= $image['id'] ?>">
+                                                        <i class="fas fa-trash-alt"></i> Supprimer</a>
+                                                </div>
+                                            </div>
+                                            <img class="img-thumbnail" src="<?= base_url($image['file_path']); ?>">
+                                        </div>
+                                    </div>
+                                <?php endforeach;
+                            endif;
+                            ?>
+                        </div>
+                        <div class="mt-3">
+                            <input type="file" name="images[]" class="form-control" multiple>
+                        </div>
                     </div>
                     <!--END: IMAGES -->
                     <!--START: INGREDIENTS -->
@@ -360,6 +381,19 @@ endif;
             } else {
                 badge.html(parseInt(badge.html()) - 1);
             }
+        });
+        //Actions sur le survol d'une image
+        $('.img-hover-delete').on('mouseenter mouseleave', function() {
+            $(this).find('.position-absolute').fadeToggle('fast');
+        });
+        //Action sur le bouton de suppression d'une image
+        $('.delete-img').on('click', function(e) {
+           e.preventDefault();
+           let id = $(this).data('id');
+           let $col = $(this).closest('.col');
+           $col.hide();
+           $col.append(`<input type="hidden" name="delete-img[]" value="${id}">`);
+           $('#badge-delete').html(parseInt($('#badge-image').html())+1);
         });
         //Ajout de SELECT2 à notre select user
         initAjaxSelect2('#id_user', {
