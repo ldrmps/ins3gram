@@ -2,7 +2,7 @@
 if(!isset($recipe)) :
     echo form_open_multipart('/admin/recipe/insert');
 else:
-    echo form_open('/admin/recipe/update'); ?>
+    echo form_open_multipart('/admin/recipe/update'); ?>
     <input type="hidden" name="id_recipe" value="<?= $recipe['id']; ?>">
 <?php
 endif;
@@ -33,7 +33,7 @@ endif;
                         <a href="#" class="nav-link active" data-bs-toggle="tab" data-bs-target="#general-tab-pane">Général</a>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#ingredient-tab-pane">Ingrédients <span id="badge-ingredient" class="badge rounded-pill text-bg-primary"><?= (isset($recipe['ingredients'])) ? count($recipe['ingredients']) : '0' ;?></span></a>
+                        <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#image-tab-pane">Images <span id="badge-image" class="badge rounded-pill text-bg-primary"><?= (isset($recipe['images'])) ? count($recipe['images']) : '0' ;?></span></a>
                     </li>
                     <li class="nav-item">
                         <a href="#" class="nav-link" data-bs-toggle="tab" data-bs-target="#tag-tab-pane">Mots Clés <span id="badge-tag" class="badge rounded-pill text-bg-primary"><?= (isset($recipe['tags'])) ? count($recipe['tags']) : '0' ;?></span></a>
@@ -69,6 +69,11 @@ endif;
                         </div>
                     </div>
                     <!--END:GENERAL -->
+                    <!--START: IMAGES -->
+                    <div class="tab-pane fade" id="image-tab-pane" role="tabpanel">
+
+                    </div>
+                    <!--END: IMAGES -->
                     <!--START: INGREDIENTS -->
                     <div class="tab-pane fade" id="ingredient-tab-pane" role="tabpanel">
                         <div class="mb-3">
@@ -191,11 +196,30 @@ endif;
                 </div>
                 <?php if (isset($recipe)) :  ?>
                     <div class="ms-2 mb-3">
+                        <?php
+                        // On part du principe que ta BDD stocke les dates en UTC
+                        $createdAt = new DateTime($recipe['created_at'], new DateTimeZone('UTC'));
+                        $updatedAt = new DateTime($recipe['updated_at'], new DateTimeZone('UTC'));
+
+                        // On convertit en heure française
+                        $createdAt->setTimezone(new DateTimeZone('Europe/Paris'));
+                        $updatedAt->setTimezone(new DateTimeZone('Europe/Paris'));
+
+                        // On prépare un formateur de date en français
+                        $fmt = new IntlDateFormatter(
+                                'fr_FR',                   // langue FR
+                                IntlDateFormatter::LONG,   // format de la date (ex: "16 septembre 2025")
+                                IntlDateFormatter::SHORT,  // format de l'heure (ex: "20:15")
+                                'Europe/Paris'             // fuseau horaire
+                        );
+                        ?>
                         <div>
-                            <span class="fw-bold">Créée le: </span><?= $recipe['created_at'] ?>
+                            <span class="fw-bold">Créée le: </span>
+                            <?= $fmt->format($createdAt) ?>
                         </div>
                         <div>
-                            <span class="fw-bold">Modifiée le: </span><?= $recipe['updated_at'] ?>
+                            <span class="fw-bold">Modifiée le: </span>
+                            <?= $fmt->format($updatedAt) ?>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -215,7 +239,13 @@ endif;
                         <option value="<?= $id ?>" selected><?= $username ?></option>
                     </select>
                     <div class="mt-3">
-                        <input type="file" class="form-control" name="image">
+                        <label for="mea" class="form-label">Image Principale</label>
+                        <?php if (isset($recipe['mea']) && !empty($recipe['mea'])) : ?>
+                            <div class="text-center mb-3 ">
+                                <img class="img-thumbnail" src="<?= base_url($recipe['mea']['file_path']); ?>" >
+                            </div>
+                        <?php endif; ?>
+                        <input id="mea" type="file" name="mea" class="form-control">
                     </div>
                 </div>
             </div>

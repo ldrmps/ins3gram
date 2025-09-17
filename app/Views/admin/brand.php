@@ -30,6 +30,7 @@
                     <thead>
                     <tr>
                         <th>ID</th>
+                        <th>Img</th>
                         <th>Nom</th>
                         <th>Actions</th>
                     </tr>
@@ -75,6 +76,19 @@
             },
             columns: [
                 { data: 'id' },
+                {
+                    data: null,
+                    orderable: false,
+                    render: function(data, type, row) {
+                        if(row.image_url) {
+                            return `<img style="height:30px;" src='${baseUrl}/${row.image_url}'>
+                        `;
+                        } else {
+                            return `<img style="height:30px;" src='${baseUrl}/assets/img/no-img.png'>
+                        `;
+                        }
+                    }
+                },
                 { data: 'name' },
                 {
                     data: null,
