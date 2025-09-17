@@ -33,11 +33,17 @@ class BrandModel extends Model
     {
         return [
             'searchable_fields' => [
-                'name',
-                'id',
+                'brand.name',
+                'brand.id',
             ],
-            'joins' => [],
-            'select' => '*',
+            'joins' => [
+                [
+                    'table' => 'media',
+                    'condition' => 'brand.id = media.entity_id AND media.entity_type = \'brand\'',
+                    'type' => 'left'
+                ]
+            ],
+            'select' => 'brand.*, media.file_path as image_url',
         ];
     }
     protected $select2SearchFields = ['name'];

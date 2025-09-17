@@ -14,10 +14,6 @@ $(document).ready(function () {
         }
     });
 });
-const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
-const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
-const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
 
 /**
@@ -150,7 +146,7 @@ function initAjaxSelect2(selector, options) {
     });
 
     // Confirmation en console (pour le développement)
-    console.log('Select2 initialisé sur :', selector, 'avec URL :', config.url);
+    // console.log('Select2 initialisé sur :', selector, 'avec URL :', config.url);
 
     return true; // Succès
 }
@@ -164,6 +160,7 @@ function initTinymce(selector) {
         plugins: [
             'preview', 'code', 'fullscreen','wordcount', 'link','lists',
         ],
+        license_key: 'gpl',
         skin: 'oxide',
         content_encoding: 'text',
         toolbar: 'undo redo | formatselect | ' +
