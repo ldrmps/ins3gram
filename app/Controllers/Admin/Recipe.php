@@ -3,6 +3,7 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
+use App\Models\MediaModel;
 use CodeIgniter\HTTP\ResponseInterface;
 
 class Recipe extends BaseController
@@ -141,6 +142,7 @@ class Recipe extends BaseController
     public function update()
     {
         $data = $this->request->getPost();
+
         $id_recipe = $data['id_recipe'];
         $rm = Model('RecipeModel');
         if ($rm->update($id_recipe, $data)) {
@@ -262,6 +264,32 @@ class Recipe extends BaseController
                 if (is_array($uploadResult) && $uploadResult['status'] === 'error') {
                     // Afficher un message d'erreur détaillé
                     $this->error("Une erreur est survenue lors de l'upload de l'image : " . $uploadResult['message']);
+                }
+            }
+            //gestion des images
+            $images = $this->request->getFiles()['images'];
+            foreach ($images as $image) {
+                if ($image->getError() !== UPLOAD_ERR_NO_FILE) {
+                    $mediaData = [
+                        'entity_type' => 'recipe',
+                        'entity_id' => $id_recipe,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ];
+                    $uploadResult = upload_file($image, 'recipe/'.$id_recipe, $image->getName(), $mediaData,true);
+                    if (is_array($uploadResult) && $uploadResult['status'] === 'error') {
+                        $this->error($uploadResult['message']);
+                    }
+                }
+            }
+
+            //suppression des images
+            if(isset($data['delete-img'])){
+                $mediaModel = Model('MediaModel');
+                foreach ($data['delete-img'] as $id_img) {
+                    // suppression uniquement de la base de données
+                    // $mediaModel->delete($id_img)
+                    // suppression de la base de donnée et suppression physique
+                    $mediaModel->deleteMedia($id_img);
                 }
             }
 
