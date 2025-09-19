@@ -26,6 +26,12 @@ class Recipe extends Migration
                 'type'=>'TEXT',
                 'null'=>true,
             ],
+            'slug'=>[
+                'type'=>'VARCHAR',
+                'constraint'=>'255',
+                'unique'=>true,
+                'null'=>false,
+            ],
             'alcool'=>[
                 'type'=>'BOOLEAN',
                 'null'=>true,

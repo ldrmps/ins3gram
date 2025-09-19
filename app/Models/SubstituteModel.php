@@ -7,7 +7,7 @@ use CodeIgniter\Model;
 class SubstituteModel extends Model
 {
     protected $table            = 'substitute';
-    protected $primaryKey       = null;
+    protected $primaryKey       = 'id_ingredient_base';
     protected $useAutoIncrement = false;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
@@ -15,7 +15,7 @@ class SubstituteModel extends Model
     protected $allowedFields    = ['id_ingredient_base','id_ingredient_sub'];
     protected $validationRules = [
         'id_ingredient_base' => 'required|integer',
-        'id_ingredient_sub'  => 'required|integer|different[id_ingredient_base]',
+        'id_ingredient_sub'  => 'required|integer|differs[id_ingredient_base]',
     ];
 
     protected $validationMessages = [
