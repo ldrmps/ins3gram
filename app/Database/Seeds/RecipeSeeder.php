@@ -11,6 +11,7 @@ class RecipeSeeder extends Seeder
         $data = [
             [
                 'name' => 'Bloody Mary',
+                'slug' => 'bloody-mary',
                 'description' => 'Le Bloody Mary est un cocktail plus ou moins fortement pimenté et épicé selon les goûts',
                 'alcool' => 1,
                 'id_user' => 1,
@@ -19,6 +20,7 @@ class RecipeSeeder extends Seeder
             ],
             [
                 'name' => 'Virgin Cuba Libre',
+                'slug' => 'virgin-cuba-libre',
                 'description' => 'Un coca avec une tranche de citron',
                 'alcool' => 0,
                 'id_user' => 2,

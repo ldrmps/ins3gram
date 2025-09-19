@@ -32,36 +32,15 @@ class Recipe extends BaseController
         helper('form');
         $this->addBreadcrumb('Recettes', "/admin/recipe");
         $this->addBreadcrumb('Modification d\'une recette', "");
-        //récuperer les informations de la recette (même celle désactivé)
-        $recipe = Model('RecipeModel')->withDeleted()->find($id_recipe);
-        //Si je n'ai pas de recette je l'indique et redirige
+        //Récupérer les informations de la recette (même celle désactivée)
+        $recipe = Model('RecipeModel')->getFullRecipe($id_recipe);
+        //Si je n'ai pas de recette, je l'indique et redirige
         if (!$recipe) {
             $this->error('Recette introuvable');
             return $this->redirect('/admin/recipe');
         }
-        //Récupération de l'utilisateur qui à créé la recette (même s'il est désactivé)
-        $user = Model('UserModel')->withDeleted()->find($recipe['id_user']);
-        unset($recipe['id_user']);
-        $recipe['user'] = $user; //on ajoute à notre tableau de recipe
-        //Récupération des ingrédients (via la table Quantity)
-        $ingredients = Model('QuantityModel')->getQuantityByRecipe($id_recipe);
-        $recipe['ingredients'] = $ingredients; //on ajoute au tableau recipe
         //Récupération des mots clés (pour les afficher dans l'onglet)
         $tags = Model('TagModel')->findAll();
-        //Récupération des mots clés associés à notre recette
-        $recipe_tags = Model('TagRecipeModel')->where('id_recipe', $id_recipe)->findAll();
-        //Création d'un tableau à une dimension pour utiliser in_array (directement dans notre tableau recipe)
-        foreach ($recipe_tags as $recipe_tag) {
-            $recipe['tags'][] = $recipe_tag['id_tag'];
-        }
-        $mediamodel = Model('MediaModel');
-        //Récupération de l'image principale et stocker dans le tableau recipe
-        $recipe['mea'] = $mediamodel->where('entity_id', $id_recipe)->where('entity_type', 'recipe_mea')->first();
-        //Récupération des images de la recette et stocker dans le tableau recipe
-        $recipe['images'] = $mediamodel->where('entity_id', $id_recipe)->where('entity_type', 'recipe')->findAll();
-        //Récupération des étapes de la recette
-        $steps = Model('StepModel')->where('id_recipe', $id_recipe)->orderBy('order', 'ASC')->findAll();
-        $recipe['steps'] = $steps; //on ajoute à notre recette
         //Affichage de la vue avec les mots clés et la recette complète en variable envoyés
         return $this->view('admin/recipe/form', ['tags' => $tags, 'recipe' => $recipe]);
     }
