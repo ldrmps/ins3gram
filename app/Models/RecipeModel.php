@@ -72,6 +72,7 @@ class RecipeModel extends Model
         } else {
             return [];
         }
+        if(!$recipe) return [];
         $id_recipe = $recipe['id'];
         //Récupération de l'utilisateur qui à créé la recette (même s'il est désactivé)
         $user = Model('UserModel')->withDeleted()->find($recipe['id_user']);

@@ -10,16 +10,25 @@ endif;
 <div class="row mb-3">
     <div class="col">
         <div class="card">
-            <div class="card-body d-flex align-items-center justify-content-between">
-                <div class="flex-fill me-3">
-                    <input type="text" class="form-control" id="name" placeholder="Nom de la recette" name="name"
-                           value="<?= isset($recipe) ? $recipe['name'] : '' ?>" required>
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="flex-fill me-3">
+                        <input type="text" class="form-control" id="name" placeholder="Nom de la recette" name="name"
+                               value="<?= isset($recipe) ? $recipe['name'] : '' ?>" required>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="switchActive"
+                               name="active" <?= isset($recipe) && $recipe['deleted_at'] ? '' : 'checked'; ?> >
+                        <label class="form-check-label" for="switchActive">Active</label>
+                    </div>
+                    <?php if(isset($recipe)) : ?>
                 </div>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="switchActive"
-                           name="active" <?= isset($recipe) && $recipe['deleted_at'] ? '' : 'checked'; ?> >
-                    <label class="form-check-label" for="switchActive">Active</label>
+                <div class="ms-4">
+                    <a href="<?= base_url('/recette/' . $recipe['slug']); ?>" class="link-underline link-underline-opacity-0" target="_blank">
+                        <?= base_url('/recette/' . $recipe['slug']); ?>
+                    </a>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

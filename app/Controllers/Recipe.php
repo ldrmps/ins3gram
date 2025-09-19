@@ -16,6 +16,7 @@ class Recipe extends BaseController
         $rm = Model('RecipeModel');
         $recipe = $rm->getFullRecipe(null,$slug);
         if($recipe) {
+            $this->title = "Recette : " . $recipe['name'];
             return $this->view('front/recipe/show', ['recipe' => $recipe], false);
         }
         return $this->view('templates/404.php', [],false);
