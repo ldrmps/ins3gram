@@ -5,3 +5,8 @@
     font-weight: 400;
     font-style: normal;
 }
+
+.recipe-img-mea {
+    max-height: 450px;
+    width: auto;
+}

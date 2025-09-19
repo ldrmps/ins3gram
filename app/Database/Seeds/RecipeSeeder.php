@@ -176,5 +176,23 @@ class RecipeSeeder extends Seeder
 
         // Insertion en batch
         $this->db->table('step')->insertBatch($data);
+
+        $data = [
+            [
+                'file_path' => 'uploads/2025/09/recipe/1/bloody-mary-7295563-1920-jpg-1758290680.jpg',
+                'entity_id' => 1,
+                'entity_type' => 'recipe_mea',
+                'created_at' => date("Y-m-d H:i:s"),
+                'updated_at' => date("Y-m-d H:i:s"),
+            ],
+            [
+                'file_path' => 'uploads/2025/09/recipe/2/39-cuba-libre-jpg-1758290837.jpg',
+                'entity_id' => 2,
+                'entity_type' => 'recipe_mea',
+                'created_at' => date("Y-m-d H:i:s"),
+                'updated_at' => date("Y-m-d H:i:s"),
+            ],
+        ];
+        $this->db->table('media')->insertBatch($data);
     }
 }
