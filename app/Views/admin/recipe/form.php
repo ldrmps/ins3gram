@@ -21,13 +21,13 @@ endif;
                                name="active" <?= isset($recipe) && $recipe['deleted_at'] ? '' : 'checked'; ?> >
                         <label class="form-check-label" for="switchActive">Active</label>
                     </div>
-                    <?php if(isset($recipe)) : ?>
                 </div>
-                <div class="ms-4">
-                    <a href="<?= base_url('/recette/' . $recipe['slug']); ?>" class="link-underline link-underline-opacity-0" target="_blank">
-                        <?= base_url('/recette/' . $recipe['slug']); ?>
-                    </a>
-                </div>
+                <?php if(isset($recipe)) : ?>
+                    <div class="ms-4">
+                        <a href="<?= base_url('/recette/' . $recipe['slug']) ?>" class="link-underline link-underline-opacity-0" target="_blank">
+                            <?= base_url('/recette/' . $recipe['slug']) ?>
+                        </a>
+                    </div>
                 <?php endif; ?>
             </div>
         </div>
