@@ -149,31 +149,156 @@ if (!function_exists('upload_file')) {
     }
 }
 
-/**
- * Convertit le code d'erreur d'upload en message explicite.
- *
- * @param int $errorCode - Le code d'erreur
- * @return string - Le message d'erreur correspondant
- */
-function getUploadErrorMessage(int $errorCode): string {
-    switch ($errorCode) {
-        case UPLOAD_ERR_OK:
-            return 'Aucune erreur, le fichier est valide.';
-        case UPLOAD_ERR_INI_SIZE:
-            return 'Le fichier dépasse la taille maximale autorisée par la configuration PHP.';
-        case UPLOAD_ERR_FORM_SIZE:
-            return 'Le fichier dépasse la taille maximale autorisée par le formulaire HTML.';
-        case UPLOAD_ERR_PARTIAL:
-            return 'Le fichier n\'a été que partiellement téléchargé.';
-        case UPLOAD_ERR_NO_FILE:
-            return 'Aucun fichier n\'a été téléchargé.';
-        case UPLOAD_ERR_NO_TMP_DIR:
-            return 'Le dossier temporaire est manquant.';
-        case UPLOAD_ERR_CANT_WRITE:
-            return 'Échec de l\'écriture du fichier sur le disque.';
-        case UPLOAD_ERR_EXTENSION:
-            return 'Une extension PHP a arrêté l\'upload du fichier.';
-        default:
-            return 'Une erreur inconnue est survenue lors de l\'upload.';
+if (!function_exists('getUploadErrorMessage')) {
+    /**
+     * Convertit le code d'erreur d'upload en message explicite.
+     *
+     * @param int $errorCode - Le code d'erreur
+     * @return string - Le message d'erreur correspondant
+     */
+    function getUploadErrorMessage(int $errorCode): string
+    {
+        switch ($errorCode) {
+            case UPLOAD_ERR_OK:
+                return 'Aucune erreur, le fichier est valide.';
+            case UPLOAD_ERR_INI_SIZE:
+                return 'Le fichier dépasse la taille maximale autorisée par la configuration PHP.';
+            case UPLOAD_ERR_FORM_SIZE:
+                return 'Le fichier dépasse la taille maximale autorisée par le formulaire HTML.';
+            case UPLOAD_ERR_PARTIAL:
+                return 'Le fichier n\'a été que partiellement téléchargé.';
+            case UPLOAD_ERR_NO_FILE:
+                return 'Aucun fichier n\'a été téléchargé.';
+            case UPLOAD_ERR_NO_TMP_DIR:
+                return 'Le dossier temporaire est manquant.';
+            case UPLOAD_ERR_CANT_WRITE:
+                return 'Échec de l\'écriture du fichier sur le disque.';
+            case UPLOAD_ERR_EXTENSION:
+                return 'Une extension PHP a arrêté l\'upload du fichier.';
+            default:
+                return 'Une erreur inconnue est survenue lors de l\'upload.';
+        }
+    }
+
+}
+
+if (!function_exists('build_filter_url')) {
+    /**
+     * Construit une URL complète avec les paramètres GET actuels + nouveaux paramètres
+     * Gère automatiquement la persistance des filtres et évite les doublons
+     *
+     * @param array $new_params Nouveaux paramètres à ajouter/modifier
+     * @param bool $reset_page Si true, remet la page à 1 (utile lors de changement de filtres)
+     * @param string|null $route Route de destination (null = route actuelle)
+     * @param array $exclude_params Paramètres à exclure de l'URL finale
+     * @return string URL complète avec base_url()
+     *
+     * Exemples d'utilisation :
+     * build_filter_url(['per_page' => 16])
+     * build_filter_url(['alcool' => 1], true, 'recette')
+     * build_filter_url(['page' => 2], false)
+     */
+    function build_filter_url(array $new_params = [], bool $reset_page = true, ?string $route = null, array $exclude_params = []): string
+    {
+        // Récupération des paramètres GET actuels
+        $current_params = $_GET ?? [];
+
+        // Si reset_page est true et qu'on ne définit pas explicitement 'page' dans new_params
+        if ($reset_page && !array_key_exists('page', $new_params)) {
+            $current_params['page'] = 1;
+        }
+
+        // Fusion des paramètres : les nouveaux écrasent les anciens
+        $final_params = array_merge($current_params, $new_params);
+
+        // Exclusion de paramètres spécifiques si demandé
+        foreach ($exclude_params as $param) {
+            unset($final_params[$param]);
+        }
+
+        // Nettoyage : suppression des valeurs vides/nulles
+        $final_params = array_filter($final_params, function($value) {
+            return $value !== null && $value !== '' && $value !== [];
+        });
+
+        // Détermination de la route
+        if ($route === null) {
+            // Route actuelle
+            $base_route = uri_string() ?: 'recette'; // Fallback si uri_string() est vide
+        } else {
+            $base_route = $route;
+        }
+
+        // Construction de l'URL finale
+        $url = base_url($base_route);
+
+        // Ajout des paramètres GET si présents
+        if (!empty($final_params)) {
+            $url .= '?' . http_build_query($final_params, '', '&', PHP_QUERY_RFC3986);
+        }
+
+        return $url;
+    }
+}
+
+if (!function_exists('get_current_filter_value')) {
+    /**
+     * Récupère la valeur actuelle d'un paramètre GET (utile pour les vues)
+     *
+     * @param string $param_name Nom du paramètre
+     * @param mixed $default Valeur par défaut si le paramètre n'existe pas
+     * @return mixed Valeur du paramètre ou valeur par défaut
+     */
+    function get_current_filter_value(string $param_name, $default = null)
+    {
+        return $_GET[$param_name] ?? $default;
+    }
+}
+
+if (!function_exists('is_filter_active')) {
+    /**
+     * Vérifie si un filtre spécifique est actif
+     *
+     * @param string $param_name Nom du paramètre
+     * @param mixed $value Valeur à vérifier
+     * @return bool True si le filtre est actif avec cette valeur
+     */
+    function is_filter_active(string $param_name, $value): bool
+    {
+        $current = get_current_filter_value($param_name);
+
+        // Gestion des tableaux (pour les filtres multi-sélection)
+        if (is_array($current)) {
+            return in_array($value, $current);
+        }
+
+        return $current == $value;
+    }
+}
+
+if (!function_exists('get_pagination_url')) {
+    /**
+     * Construit une URL de pagination en gardant tous les filtres actuels
+     *
+     * @param int $page Numéro de page
+     * @return string URL complète
+     */
+    function get_pagination_url(int $page): string
+    {
+        return build_filter_url(['page' => $page], false);
+    }
+}
+
+if (!function_exists('remove_filter_url')) {
+    /**
+     * Construit une URL en supprimant un ou plusieurs filtres spécifiques
+     *
+     * @param array|string $filters_to_remove Filtre(s) à supprimer
+     * @return string URL complète
+     */
+    function remove_filter_url($filters_to_remove): string
+    {
+        $filters_array = is_array($filters_to_remove) ? $filters_to_remove : [$filters_to_remove];
+        return build_filter_url([], true, null, $filters_array);
     }
 }

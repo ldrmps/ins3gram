@@ -3,13 +3,16 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use App\Models\RecipeModel;
 use CodeIgniter\HTTP\ResponseInterface;
 
 class Recipe extends BaseController
 {
     public function index()
     {
-        return $this->view('front/recipe/index', [], false);
+        helper(['form']);
+        $recipes = Model('RecipeModel')->getAllRecipes();
+        return $this->view('front/recipe/index', ['recipes' => $recipes], false);
     }
 
     public function show($slug) {

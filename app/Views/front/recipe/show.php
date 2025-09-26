@@ -75,5 +75,5 @@
         main.sync(thumbnails);
         main.mount();
         thumbnails.mount();
-    })
+    });
 </script>
