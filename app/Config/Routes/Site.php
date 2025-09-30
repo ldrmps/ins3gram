@@ -2,6 +2,7 @@
 $routes->get('/', 'Home::index');
 $routes->get('/forbidden','Site::forbidden');
 
+$routes->get('/test-pagination','Site::testPagination');
 $routes->get('/sign-in', 'Auth::signIn');
 $routes->post('/auth/login', 'Auth::login');
 $routes->get('/auth/logout', 'Auth::logout');
@@ -12,5 +13,3 @@ $routes->group('recette', function ($routes) {
 });
 //dataTable
 $routes->post('/datatable/searchdatatable', 'DataTable::searchdatatable');
-//test
-$routes->get('/test-pagination','Site::testPagination');
