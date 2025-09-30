@@ -74,3 +74,10 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->post('delete','Unit::delete');
     });
 });
+
+$routes->group('admin',['namespace' => 'App\Controllers\Admin'
+], function ($routes) {
+    $routes->group('ingredient', function ($routes) {
+        $routes->get('search', 'Ingredient::search');
+    });
+});
