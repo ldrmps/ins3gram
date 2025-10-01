@@ -121,9 +121,12 @@ class RecipeModel extends Model
     }
 
     private function applyFilters($filters = []) {
-        // TODO : Filtre alcool
-        if (isset($filters['alcool']) && $filters['alcool'] == 1) {
-            $this->where('recipe.alcool', 1);
+        if (isset($filters['alcool'])) {
+            if ($filters['alcool'] == 1) {
+                $this->where('recipe.alcool', 1);
+            } else if ($filters['alcool'] == 0) {
+                $this->where('recipe.alcool', 0);
+            }
         }
         if (isset($filters['search']) && !empty(trim($filters['search']))) {
             $search = trim($filters['search']);

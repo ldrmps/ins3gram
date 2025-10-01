@@ -277,6 +277,9 @@ if (!function_exists('is_filter_active')) {
         if (is_array($current)) {
             return in_array($value, $current);
         }
+        if (is_array($value)) {
+            return in_array($current, $value);
+        }
 
         return $current == $value;
     }
