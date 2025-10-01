@@ -109,12 +109,10 @@ class RecipeModel extends Model
         $this->select('recipe.id, recipe.name, alcool, slug, media.file_path as mea, COALESCE(AVG(score), 0) as score');
         $this->join('media',' recipe.id = media.entity_id AND media.entity_type = \'recipe_mea\'','left');
         $this->join('opinion',' opinion.id_recipe = recipe.id','left');
-        // TODO : Appliquer les filtres ici
         // Ajoutez cette ligne après les JOIN
         $this->applyFilters($filters);
         //$this->orderBy($this->getValidOrderField($orderBy), $orderDirection);
         $this->groupBy('recipe.id');
-        // TODO : Tri et pagination
         $data = $this->paginate($perPage, 'default', $page);
         return [
             'data' => $data,
@@ -130,6 +128,12 @@ class RecipeModel extends Model
         if (isset($filters['search']) && !empty(trim($filters['search']))) {
             $search = trim($filters['search']);
             $this->like('recipe.name', $search);
+        }
+        if (isset($filters['ingredients']) && !empty($filters['ingredients'])) {
+            $ingredientIds = $filters['ingredients'];
+            $this->join('quantity', 'recipe.id = quantity.id_recipe');
+            $this->whereIn('quantity.id_ingredient', $ingredientIds);
+            $this->having('COUNT(DISTINCT quantity.id_ingredient) >=', count($ingredientIds));
         }
         $sort = $filters['sort'] ?? 'name_asc';
         switch ($sort) {

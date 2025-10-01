@@ -150,7 +150,7 @@ function initAjaxSelect2(selector, options) {
     });
 
     // Confirmation en console (pour le développement)
-    //console.log('Select2 initialisé sur :', selector, 'avec URL :', config.url);
+    // console.log('Select2 initialisé sur :', selector, 'avec URL :', config.url);
 
     return true; // Succès
 }

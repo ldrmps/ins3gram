@@ -11,16 +11,3 @@
     font-style: normal;
 
 }
-
-.all-recipes .card-img-top {
-    height: 250px;
-    width:auto;
-    object-fit: cover;
-    display: block;      /* nécessaire pour margin auto */
-    margin: 0 auto;
-}
-
-.ls-recipe:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-}

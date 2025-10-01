@@ -45,7 +45,7 @@
                     data: 'name',
                     render : function(data, type, row) {
                         return `<a class="link-underline link-underline-opacity-0"
-                                    href="<?= base_url('admin/recipe/') ?>${row.id_recipe}">
+                                    href="<?= base_url('admin/recipe/') ?>${row.id}">
                                     ${data}
                                 </a>`;
                     }
