@@ -29,24 +29,68 @@
 <!--START: PAGE -->
 <div class="row">
     <!--START: FILTRE -->
-    <div class="col-md-2 ">
-        <span class="h3">FILTRES</span>
-        <?php echo form_open(build_filter_url(), ['method' => 'get']); ?>
-        <div class="form-check">
-            <input type="checkbox" name="alcool" value="1" class="form-check-input" id="alcool"
-                    <?= is_filter_active('alcool', 1) ? 'checked' : '' ?>>
+    <div class="col-md-3 ">
+        <div class="card my-4">
+            <div class="card-header">
+                <span class="h5">Filtres Actifs</span>
+            </div>
+            <div class="card-body">
+                <?php
+                foreach($_GET as $key => $value):
+                    if( $key !== "per_page" && $key !== "page"):
+                        if($key == "ingredients") :
+                            //Nettoie la liste des ingrédients
+                            $value = array_unique($value);
+                            foreach($value as $key2 => $ing) : ?>
+                                <a class="btn btn-sm btn-primary" href="<?= build_filter_url([],true,null,['ingredients' => [$key2]]);?>">
+                                    <?= $ing ?> <i class="fas fa-xmark"></i>
+                                </a>
+                            <?php
+                            endforeach;
+                        else :
+                            ?>
+                            <a class="btn btn-sm btn-primary" href="<?= build_filter_url([],true,null,[$key]);?>">
+                                <?= $key ?> <i class="fas fa-xmark"></i>
+                            </a>
+                        <?php
+                        endif;
+                    endif;
+                endforeach; ?>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="h5">FILTRES</span>
+            </div>
+            <div class="card-body">
+                <?php echo form_open(build_filter_url(), ['method' => 'get'], $_GET); ?>
+                <div class="form-check <?= is_filter_active('alcool', 1) ? 'd-none' : '' ?>">
+                    <input type="checkbox" name="alcool" value="1" class="form-check-input" id="alcool"
+                            <?= is_filter_active('alcool', 1) ? 'checked' : '' ?>>
 
-            <label class="form-check-label" for="alcool">Avec alcool</label>
+                    <label class="form-check-label" for="alcool">Avec alcool</label>
+                </div>
+                <hr>
+                <div class="my-2">
+                    <span class="h6">Filtrer par ingrédients</span>
+                </div>
+                <div id="zone-ingredients">
+                </div>
+                <div class="mb-3">
+                    <span class="btn btn-primary" id="add-ingredient">
+                        <i class="fas fa-plus"></i> Ajouter un ingrédient
+                    </span>
+                </div>
+
+            </div>
+            <div class="card-footer d-grid">
+                <button type="submit" class="btn btn-primary">Filtrer</button>
+            </div>
+            <?php echo form_close(); ?>
+
         </div>
-        <div class="mb-3">
-                            <span class="btn btn-primary" id="add-ingredient">
-                                <i class="fas fa-plus"></i> Ajouter un ingrédient
-                            </span>
-        </div>
-        <div id="zone-ingredients">
-        </div>
-        <button type="submit" class="btn btn-primary">Filtrer</button>
-        <?php echo form_close(); ?>
+
+
 
     </div>
     <!--END: FILTRE -->
@@ -64,8 +108,16 @@
                             <div class="card-title h5">
                                 <?= $recipe['name']; ?>
                             </div>
-                            <div>
-                                <?= $recipe['score']; ?>
+                            <div class="mb-2">
+                                <?php
+                                for($i = 0; $i < 5; $i++) {
+                                    if ($i< $recipe['score']) {
+                                        echo '<i class="fas fa-star"></i>';
+                                    } else {
+                                        echo '<i class="far fa-star"></i>';
+                                    }
+                                }
+                                ?>
                             </div>
                             <div class="d-grid">
                                 <a href="<?= base_url('recette/'.$recipe['slug']); ?>" class="btn btn-primary"><i class="fas fa-eye"></i> Voir la recette</a>
@@ -108,7 +160,7 @@
             `;
             $('#zone-ingredients').append(row);
             initAjaxSelect2('#zone-ingredients .row-ingredient:last-child .select-ingredient', {
-                url: baseUrl + 'admin/ingredient/search',
+                url: baseUrl + 'api/ingredient/all',
                 placeholder: 'Rechercher un ingrédient...',
                 searchFields: 'name',
                 showDescription: false,

@@ -11,14 +11,15 @@ class Recipe extends BaseController
     public function index()
     {
         helper(['form']);
+
         // Récupération des filtres
         $filters = [
             'alcool' => $this->request->getGet('alcool'),
             'search' => $this->request->getGet('search'),
             'sort' => $this->request->getGet('sort'),
-            'ingredients' => $this->request->getGet('ingredients'),
-            // TODO : autres filtres
+            'ingredients' => $this->request->getGet('ingredients')
         ];
+        if (!empty($filters['ingredients'])) $filters['ingredients'] = array_unique($filters['ingredients']);
         // Paramètres de tri et pagination
         $orderBy = $this->request->getGet('order_by') ?? 'name';
         $perPage = (int)($this->request->getGet('per_page') ?? 8);
