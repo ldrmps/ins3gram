@@ -19,5 +19,9 @@ $routes->group('user', function ($routes) {
     $routes->post('update', 'User::update');
 });
 
+$routes->group('messagerie', ['filter' => 'auth'], function ($routes) {
+    $routes->get('/', 'Chat::index');
+});
+
 //dataTable
 $routes->post('/datatable/searchdatatable', 'DataTable::searchdatatable');

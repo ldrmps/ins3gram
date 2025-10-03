@@ -7,53 +7,28 @@ use CodeIgniter\HTTP\ResponseInterface;
 
 class Ingredient extends BaseController
 {
-    protected $breadcrumb = [['text'=>'Tableau de Bord', 'url' => "/admin/dashboard"],['text'=>"Ingrédients", 'url' => '']];
-    public function index()
-    {
-        helper('form');
+    public function index(){
         return $this->view('/admin/ingredient/index');
     }
-
-    public function edit($id_ingredient) {
-        helper('form');
-        $igm = Model('IngredientModel');
-        $ingredient = $igm->find($id_ingredient);
-        if (!$ingredient) {
-            $this->error('Ingredient inexistant');
-            return $this->redirect('/admin/ingredient');
-        }
-        $brand = Model('BrandModel')->findAll();
-        $category = Model('CategIngModel')->findAll();
-        return $this->view('/admin/ingredient/form', ['ingredient' => $ingredient, 'brand' => $brand, 'category' => $category]);
-    }
-    public function insert(){
-        //
-    }
-    public function create() {
-        helper('form');
+    public function create(){
+        helper(['form']);
         return $this->view('/admin/ingredient/form');
     }
 
-    public function delete() {
-        $igm = model('IngredientModel');
-        $id = $this->request->getPost('id');
-        if ($igm->delete($id)) {
-            return $this->response->setJSON([
-                'success' => true,
-                'message' => "L'ingrédient à été supprimé avec succès !",
-            ]);
-        } else {
-            return $this->response->setJSON([
-                'success' => false,
-                'message' => $igm->errors(),
-            ]);
+    public function insert() {
+        $image = $this->request->getFiles();
+        $data = $this->request->getPost();
+        echo "<pre>";
+        $id_ingredient = Model('IngredientModel')->insert($data);
+        foreach($image['image'] as $img) {
+            print_r(upload_file($img,'ingredient',$data['name'],['entity_type' => 'ingredient',"entity_id" => $id_ingredient], true));
         }
-    }
+        die();
 
-    public function update() {
-        //
-    }
 
+
+        die();
+    }
     public function search()
     {
         $request = $this->request;
@@ -76,5 +51,4 @@ class Ingredient extends BaseController
         // Réponse JSON
         return $this->response->setJSON($result);
     }
-
 }
