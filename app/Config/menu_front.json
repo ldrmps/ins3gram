@@ -4,11 +4,5 @@
     "url": "/recette",
     "icon": "<i class=\"nav-icon fas fa-martini-glass-citrus\"></i>",
     "class": ""
-  },
-  "admin": {
-    "title": "Admin",
-    "url": "/admin/dashboard",
-    "icon": "<i class=\"nav-icon fas fa-house\"></i>",
-    "class": ""
   }
 }
