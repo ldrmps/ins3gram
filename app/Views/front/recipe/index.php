@@ -31,7 +31,7 @@
 <!--START: PAGE -->
 <div class="row">
     <!--START: FILTRE -->
-    <div class="col-md-3 ">
+    <div class="col-lg-3">
         <!--START: FILTRE ACTIF -->
         <?php
         if(!empty(array_diff_key($_GET, array_flip(['page', 'per_page', 'sort'])))) { ?>
@@ -119,7 +119,7 @@
     <!--START: CONTENUS -->
     <div class="col p-4">
         <!--START: RECETTES -->
-        <div class="row row-cols-2 row-cols-md-4 all-recipes">
+        <div class="row row-cols-2 row-cols-lg-4 all-recipes">
             <?php foreach ($recipes as $recipe): ?>
                 <div class="col mb-4">
                     <div class="card ls-recipe h-100">

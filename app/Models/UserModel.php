@@ -36,7 +36,6 @@ class UserModel extends Model
             'first_name' => 'permit_empty|max_length[255]',
             'last_name'  => 'permit_empty|max_length[255]',
             'birthdate'  => 'required|valid_date',
-            'id_permission' => 'required|integer',
         ];
         return $data;
     }
@@ -51,7 +50,6 @@ class UserModel extends Model
             'first_name' => 'permit_empty|max_length[255]',
             'last_name'  => 'permit_empty|max_length[255]',
             'birthdate'  => 'required|valid_date',
-            'id_permission' => 'required|integer',
         ];
         return $data;
     }
@@ -83,10 +81,6 @@ class UserModel extends Model
         'birthdate' => [
             'required'   => 'La date de naissance est obligatoire.',
             'valid_date' => 'Veuillez saisir une date valide.',
-        ],
-        'id_permission' => [
-            'required' => 'Un rôle doit être attribué.',
-            'integer'  => 'L’ID du rôle doit être un nombre.',
         ],
     ];
 

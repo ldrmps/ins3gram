@@ -14,7 +14,7 @@ class User extends Entity
         'first_name'    => null,
         'last_name'     => null,
         'birthdate'     => null,
-        'id_permission' => null,
+        'id_permission' => 2,
         'created_at'    => null,
         'updated_at'    => null,
         'deleted_at'    => null,
