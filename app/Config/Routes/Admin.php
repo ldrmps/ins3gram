@@ -39,12 +39,11 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
 
     $routes->group('ingredient', function ($routes) {
         $routes->get('/', 'Ingredient::index');
-        $routes->get('(:num)', 'Ingredient::edit/$1');
         $routes->get('new', 'Ingredient::create');
-        $routes->post('update', 'Ingredient::update');
-        $routes->post('insert', 'Ingredient::insert');
-        $routes->post('delete', 'Ingredient::delete');
+        $routes->get('(:num)', 'Ingredient::edit/$1');
         $routes->get('search', 'Ingredient::search');
+        $routes->post('insert', 'Ingredient::insert');
+        $routes->post('update', 'Ingredient::update');
     });
 
     $routes->group('unit', function ($routes) {
