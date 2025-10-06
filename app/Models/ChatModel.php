@@ -41,4 +41,16 @@ class ChatModel extends Model
         ],
     ];
 
+    public function getConversation($user1, $user2) {
+        return $this->groupStart()
+                ->where('id_sender', $user1)
+                ->where('id_receiver', $user2)
+            ->groupEnd()
+            ->orGroupStart()
+                ->where('id_sender', $user2)
+                ->where('id_receiver', $user1)
+            ->groupEnd()
+            ->orderBy('created_at', "ASC")
+            ->findAll();
+    }
 }
