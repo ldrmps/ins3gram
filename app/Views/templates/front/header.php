@@ -96,6 +96,9 @@
                                 <a class="dropdown-item" href="<?= base_url(); ?>">Mon Profil</a>
                             </li>
                             <li>
+                                <a class="dropdown-item" href="<?= base_url('/messagerie'); ?>">Messagerie</a>
+                            </li>
+                            <li>
                                 <a class="dropdown-item" href="<?= base_url('/auth/logout'); ?>">Se déconnecter</a>
                             </li>
                         <?php else : ?>

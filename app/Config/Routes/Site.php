@@ -22,6 +22,7 @@ $routes->group('user', function ($routes) {
 $routes->group('messagerie', ['filter' => 'auth'], function ($routes) {
     $routes->get('/', 'Chat::index');
     $routes->get('conversation', 'Chat::conversation');
+    $routes->get('new-messages', 'Chat::newMessage');
     $routes->post('send', 'Chat::send');
 });
 
