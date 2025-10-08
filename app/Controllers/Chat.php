@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
-use App\Models\ChatModel;
 use CodeIgniter\HTTP\ResponseInterface;
 
 class Chat extends BaseController
@@ -14,13 +13,14 @@ class Chat extends BaseController
         return $this->view('/front/chat', [], false);
     }
 
-    public function send() {
+    public function send()
+    {
         $data = esc($this->request->getPost());
         $cm = Model('ChatModel');
         if($cm->insert($data)) {
             return $this->response->setJSON([
                 'success' => true,
-                'message' => 'Message envoyé',
+                'message' => 'message envoyé',
                 'data' => $data
             ]);
         } else {
@@ -37,6 +37,7 @@ class Chat extends BaseController
         $conversation = $cm->getConversation($data['id_1'], $data['id_2'], $data['page']);
         return $this->response->setJSON($conversation);
     }
+
     public function newMessages() {
         $data = $this->request->getGet();
         $cm = Model('ChatModel');
