@@ -41,16 +41,33 @@ class ChatModel extends Model
         ],
     ];
 
-    public function getConversation($user1, $user2) {
-        return $this->groupStart()
-                ->where('id_sender', $user1)
-                ->where('id_receiver', $user2)
+    public function getConversation($user1, $user2, $page) {
+        $data = $this->groupStart()
+            ->where('id_sender', $user1)
+            ->where('id_receiver', $user2)
             ->groupEnd()
             ->orGroupStart()
-                ->where('id_sender', $user2)
-                ->where('id_receiver', $user1)
+            ->where('id_sender', $user2)
+            ->where('id_receiver', $user1)
             ->groupEnd()
-            ->orderBy('created_at', "ASC")
-            ->findAll();
+            ->orderBy('created_at', 'DESC')
+            ->paginate(10, 'default', $page);
+        return [
+            'data' => $data,
+            'max_page' => $this->pager->getPageCount()
+        ];
+    }
+    public function getNewMessages($user1, $user2, $date) {
+        $data = $this->groupStart()
+            ->where('id_sender', $user1)
+            ->where('id_receiver', $user2)
+            ->groupEnd()
+            ->orGroupStart()
+            ->where('id_sender', $user2)
+            ->where('id_receiver', $user1)
+            ->groupEnd()
+            ->where('created_at >', $date)
+            ->orderBy('created_at', 'DESC');
+        return $data->findAll();
     }
 }
