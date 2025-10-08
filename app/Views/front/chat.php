@@ -13,6 +13,9 @@
                         <select name="receiver" id="receiver" class="form-select">
                         </select>
                     </div>
+                    <div id="historique">
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -45,6 +48,7 @@
 <script>
     $(document).ready(function() {
         const base_url = "<?= base_url() ?>";
+        const $messages = $('#messages');
         var sender = <?= $session_user->id; ?>;
         var receiver = null;
         var page;
@@ -79,14 +83,14 @@
                     last_message_date = data[0].created_at;
 
                     for(var i = 0; i < data.length; i++) {
-                        var color ='success';
-                        var offset ='';
                         if(data[i].id_sender == sender) {
-                            color = 'primary';
-                            offset = 'offset-5';
+                            $messages.prepend(addMessage(data[i].content,data[i].created_at, true));
+                        } else {
+                            $messages.prepend(addMessage(data[i].content,data[i].created_at, false));
                         }
-                        addMessage(data[i].content,data[i].created_at, color, offset);
                     }
+                    var $container = $('#zone-message .card-body');
+                    $container.scrollTop($container[0].scrollHeight);
                 },
                 'error' : function(data){
                     console.log(data);
@@ -108,9 +112,9 @@
                     content : message
                 },
                 'success' : function(data){
-                    // console.log(data);
+                    console.log(data);
                     if(data.success) {
-                        addMessage(data.data.content);
+                        $messages.append(addMessage(data.data.content,"à l'instant",true));
                         $('#message').val('');
                     }
                 },
@@ -135,16 +139,14 @@
                         'success' : function(data_full){
                             var data = data_full.data;
                             for(var i = 0; i < data.length; i++) {
-                                var color ='success';
-                                var offset ='';
                                 if(data[i].id_sender == sender) {
-                                    color = 'primary';
-                                    offset = 'offset-5';
+                                    $messages.prepend(addMessage(data[i].content,data[i].created_at, true));
+                                } else {
+                                    $messages.prepend(addMessage(data[i].content,data[i].created_at, false));
                                 }
-                                addMessage(data[i].content,data[i].created_at, color, offset, false);
-                                var $container = $('#zone-message .card-body');
-                                $container.scrollTop(150);
                             }
+                            var $container = $('#zone-message .card-body');
+                            $container.scrollTop(150);
                         },
                         'error' : function(data){
                             console.log(data);
@@ -159,7 +161,6 @@
         setInterval(checkNewMessage, 3000);
 
         function checkNewMessage() {
-            console.log(last_message_date);
             $.ajax({
                 'type': 'GET',
                 'url' : base_url + 'messagerie/new-messages',
@@ -169,22 +170,26 @@
                     'date' : last_message_date
                 },
                 'success' : function(data){
-                    console.log(data);
+                    for(var i = 0; i < data.length; i++) {
+                        $messages.append(addMessage(data[i].content,data[i].created_at, false));
+                        last_message_date = data[i].created_at;
+                        var $container = $('#zone-message .card-body');
+                        $container.scrollTop($container[0].scrollHeight);
+                    }
                 },
                 'error' : function(data){
                     console.log(data);
                 }
             })
         }
-        /**
-         * Adds a message element to the DOM, appending it to the designated message container.
-         *
-         * @param {string} message - The text message to display.
-         * @param {string} [color='primary'] - The Bootstrap alert color class to use for styling.
-         * @param {string} [offset='offset-md-5'] - The optional offset class for positioning the message container.
-         * @return {void} Does not return a value.
-         */
-        function addMessage(message,date, color = 'primary', offset = 'offset-5', scroll = true){
+
+        function addMessage(message, date = '', sender = false){
+            var color ='success';
+            var offset ='';
+            if(sender == true) {
+                color = 'primary';
+                offset = 'offset-5';
+            }
             var msg = `
                 <div class="col-7 ${offset}">
                     <div class="alert alert-${color}">
@@ -193,10 +198,7 @@
                     <span class="text-muted">${date}</span>
                 </div>
             `;
-            $('#messages').prepend(msg);
-            if(!scroll) return;
-            var $container = $('#zone-message .card-body');
-            $container.scrollTop($container[0].scrollHeight);
+            return msg;
         }
     });
 </script>
