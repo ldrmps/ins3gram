@@ -2,7 +2,7 @@
 $routes->get('/', 'Home::index');
 $routes->get('/forbidden','Site::forbidden');
 
-$routes->get('/test-pagination','Site::testPagination');
+$routes->get('/test','Site::test');
 
 $routes->get('/sign-in', 'Auth::signIn');
 $routes->get('/register', 'User::register');
@@ -25,6 +25,11 @@ $routes->group('messagerie', ['filter' => 'auth'], function ($routes) {
     $routes->get('new-messages', 'Chat::newMessages');
     $routes->get('historique', 'Chat::historique');
     $routes->post('send', 'Chat::send');
+});
+
+$routes->group('contactez-nous', function ($routes) {
+    $routes->get('/', 'Contact::index');
+    $routes->post('send', 'Contact::send');
 });
 
 //dataTable

@@ -4,5 +4,11 @@
     "url": "/recette",
     "icon": "<i class=\"nav-icon fas fa-martini-glass-citrus\"></i>",
     "class": ""
+  },
+  "contact": {
+    "title": "Contact",
+    "url": "/contactez-nous",
+    "icon": "<i class=\"nav-icon fas fa-envelope\"></i>",
+    "class": ""
   }
 }
