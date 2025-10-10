@@ -6,7 +6,7 @@
 <div style="height: 80vh !important;">
     <div class="row h-100">
         <!--START: HISTORIQUE -->
-        <div class="col-md-3">
+        <div class="col-md-3 h-100">
             <div class="card h-100">
                 <div class="card-body overflow-auto">
                     <div class="">
@@ -14,7 +14,14 @@
                         </select>
                     </div>
                     <div id="historique">
-
+                        <?php foreach($historique as $histo) : ?>
+                            <div class="card mt-3" data-id="<?= $histo['id']; ?>">
+                                <div class="card-body">
+                                    <?= $histo['username']; ?><br>
+                                    <?= $histo['last_message']; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
             </div>
@@ -22,10 +29,8 @@
         <!--END: HISTORIQUE -->
         <!--START: ZONE MESSAGE -->
         <div class="col h-100">
-            <div class="card h-100" id="zone-message">
-                <div class="card-header">
-                </div>
-                <div class="card-body overflow-auto">
+            <div class="card h-100 " id="zone-message">
+                <div class="card-body overflow-auto my-3">
                     <div class="row" id="messages">
 
                     </div>
@@ -54,6 +59,7 @@
         var page;
         var max_page;
         var last_message_date;
+
         //Ajout du SELECT2 à notre select destinataire (receiver)
         initAjaxSelect2("#receiver",{
             url: base_url + 'api/user/all',
@@ -61,42 +67,52 @@
             searchFields: ['username'],
             delay : 250
         });
-        //Événement au choix d'un destinataire
-        $('#receiver').on('select2:select', function(e){
+        // Fonction réutilisable pour charger une conversation
+        function loadConversation(receiverId) {
             page = 1;
-            var data = e.params.data;
-            // console.log(data);
-            receiver = data.id;
-            $('#zone-message .card-header').html(data.text);
+            receiver = receiverId;
             $.ajax({
-                'type': 'GET',
-                'url' : base_url + 'messagerie/conversation',
-                'data' : {
-                    'id_1' : sender,
-                    'id_2' : receiver,
-                    'page' : page
+                type: 'GET',
+                url: base_url + 'messagerie/conversation',
+                data: {
+                    id_1: sender,
+                    id_2: receiver,
+                    page: page
                 },
-                'success' : function(data_full){
+                success: function (data_full) {
                     var data = data_full.data;
                     max_page = data_full.max_page;
                     $('#messages').empty();
                     last_message_date = data[0].created_at;
 
-                    for(var i = 0; i < data.length; i++) {
-                        if(data[i].id_sender == sender) {
-                            $messages.prepend(addMessage(data[i].content,data[i].created_at, true));
-                        } else {
-                            $messages.prepend(addMessage(data[i].content,data[i].created_at, false));
-                        }
-                    }
+                    data.forEach(function (msg) {
+                        const isSender = msg.id_sender == sender;
+                        $messages.prepend(addMessage(msg.content, msg.created_at, isSender));
+                    });
+
                     var $container = $('#zone-message .card-body');
                     $container.scrollTop($container[0].scrollHeight);
                 },
-                'error' : function(data){
-                    console.log(data);
+                error: function (err) {
+                    console.error(err);
                 }
             });
+
+        }
+        // Événement au choix d'un destinataire
+        $('#receiver').on('select2:select', function (e) {
+            const receiverId = e.params.data.id;
+            loadConversation(receiverId);
         });
+        // Événement au clic sur une conversation dans l'historique
+        $('#historique').on('click', '.card', function () {
+            const receiverId = $(this).data('id');
+            $('.active-conversation').removeClass('active-conversation');
+            $(this).addClass('active-conversation');
+            loadConversation(receiverId);
+        });
+        $("#historique .card").first().trigger('click');
+
         //Événement au clic de l'envoi du message
         $('#send-message').on('click', function(){
             var message = $('#message').val();
@@ -160,6 +176,7 @@
         //Execute à un interval régulier
         setInterval(checkNewMessage, 3000);
 
+        //Fonction de verification des nouveaux messages
         function checkNewMessage() {
             $.ajax({
                 'type': 'GET',
@@ -180,9 +197,46 @@
                 'error' : function(data){
                     console.log(data);
                 }
+            });
+            $.ajax({
+                'type': 'GET',
+                'url' : base_url + 'messagerie/historique',
+                'data' : {
+                    'id' : sender,
+                    'date' : last_message_date
+                },
+                'success' : function(data){
+                    $('#historique').empty();
+                    var arret = false;
+                    for(i = 0; i < data.length; i++) {
+                        var active = '';
+                        if(data[i].id == receiver) {
+                            active = 'active-conversation';
+                            arret = true;
+                        }
+                        if(arret == false) {
+                            var new_message = 'new-message';
+                        } else {
+                            var new_message = '';
+                        }
+                        var histo = `
+                            <div class="card mt-3 ${active} ${new_message}" data-id="${data[i].id}">
+                                <div class="card-body">
+                                    ${data[i].username}<br>
+                                    ${data[i].last_message}
+                                </div>
+                            </div>
+                        `;
+                        $('#historique').append(histo);
+                        console.log(data[i].id);
+                    }
+                },
+                'error' : function(data){
+                    console.log(data);
+                }
             })
         }
-
+        //Fonction d'ajout d'un message dans la zone de message
         function addMessage(message, date = '', sender = false){
             var color ='success';
             var offset ='';
@@ -203,5 +257,17 @@
     });
 </script>
 <style>
+    #historique .card:hover {
+        cursor: pointer;
+        border-color: var(--bs-primary);
+        transform: scale(1.05);
+    }
 
+    .active-conversation {
+        border-color: var(--bs-primary) !important;
+    }
+
+    .new-message {
+        background-color: var(--bs-primary) !important;
+    }
 </style>

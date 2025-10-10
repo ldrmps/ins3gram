@@ -67,7 +67,7 @@ class ChatModel extends Model
     }
 
     public function getHistorique($userId) {
-        return $this->select('u.username, MAX(chat.created_at) AS last_message')
+        return $this->select('u.id, u.username, MAX(chat.created_at) AS last_message')
             ->join('user u', '(u.id = chat.id_sender AND chat.id_receiver = ' . $userId . ') 
                               OR (u.id = chat.id_receiver AND chat.id_sender = ' . $userId . ')')
             ->groupBy('u.username')
