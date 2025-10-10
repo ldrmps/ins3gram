@@ -10,7 +10,8 @@ class Chat extends BaseController
     public function index()
     {
         $this->title = "Chat";
-        return $this->view('/front/chat', [], false);
+        $histo = Model('ChatModel')->getHistorique($this->session->get('user')->id);
+        return $this->view('/front/chat', ['historique' => $histo], false);
     }
 
     public function send()
@@ -43,5 +44,12 @@ class Chat extends BaseController
         $cm = Model('ChatModel');
         $newMessages = $cm->getNewMessages($data['id_1'], $data['id_2'], $data['date']);
         return $this->response->setJSON($newMessages);
+    }
+
+    public function historique() {
+        $id = $this->request->getGet('id');
+        $cm = Model('ChatModel');
+        $histo = $cm->getHistorique($id);
+        return $this->response->setJSON($histo);
     }
 }
