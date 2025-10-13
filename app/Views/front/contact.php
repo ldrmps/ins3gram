@@ -10,6 +10,12 @@
     <div class="col-md-6 order-1 order-md-2 mb-3">
         <div class="card">
             <div class="card-body">
+                <?php
+                if (isset($success)) : ?>
+                    <div class="alert alert-success">
+                        <?= $success ?>
+                    </div>
+                <?php endif;?>
                 <?= form_open(base_url('/contactez-nous/send')); ?>
 
                 <div class="form-floating mb-3">
