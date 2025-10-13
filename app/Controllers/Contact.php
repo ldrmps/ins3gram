@@ -30,7 +30,16 @@ class Contact extends BaseController
                 'errors' => [
                     'required' => 'Veuillez saisir votre adresse email.',
                     'valid_email' => 'Veuillez saisir une adresse email valide.',
-                    'max_length' => "L'email ne dois pas depasser 255 caractères"
+                    'max_length' => "L'email ne doit pas dépasser 255 caractères"
+                ]
+            ],
+            'message' => [
+                'label' => 'Message',
+                'rules' => 'required|min_length[10]|max_length[1000]',
+                'errors' => [
+                    'required' => 'Veuillez saisir un message.',
+                    'min_length' => "Le message doit contenir au minimum 10 caractères",
+                    'max_length' => "Le message ne doit pas dépasser 1000 caractères"
                 ]
             ]
         ];
@@ -42,11 +51,13 @@ class Contact extends BaseController
         $email->setTo('form@localhost');
         $email->setFrom($data['email']);
         $email->setSubject($data['subject']);
-        $email->setMessage(esc($data['message']));
+        $message = esc($data['message']);
+        if(!isset($data['rgpd'])) $message .= "<hr> Attention la personne n'a pas coché la case RGPD !";
+        $email->setMessage($message);
         if ($email->send()) {
-            echo "E-mail envoyé avec succès !";
+            return $this->redirect('/contactez-nous', ['success' => 'Message envoyé, nous vous recontacterons prochainement.']);
         } else {
-            echo $email->printDebugger(['headers']);
+            return $this->redirect('/');
         }
     }
 }

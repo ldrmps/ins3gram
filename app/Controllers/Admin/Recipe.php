@@ -32,9 +32,9 @@ class Recipe extends BaseController
         helper('form');
         $this->addBreadcrumb('Recettes', "/admin/recipe");
         $this->addBreadcrumb('Modification d\'une recette', "");
-        //Récupérer les informations de la recette (même celle désactivée)
+        //récuperer les informations de la recette (même celle désactivé)
         $recipe = Model('RecipeModel')->getFullRecipe($id_recipe);
-        //Si je n'ai pas de recette, je l'indique et redirige
+        //Si je n'ai pas de recette je l'indique et redirige
         if (!$recipe) {
             $this->error('Recette introuvable');
             return $this->redirect('/admin/recipe');
@@ -349,5 +349,16 @@ class Recipe extends BaseController
                 ]);
             }
         }
+    }
+
+    public function saveScore() {
+        $data = $this->request->getPost();
+        $opm = Model('OpinionModel');
+        $result = $opm->insertOrUpdateScore($data['id_recipe'], $data['id_user'], $data['score']);
+        return $this->response->setJSON(["data" => $result]);
+    }
+
+    public function switchFavorite() {
+
     }
 }
