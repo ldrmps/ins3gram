@@ -7,7 +7,7 @@ use CodeIgniter\Model;
 class FavoriteModel extends Model
 {
     protected $table            = 'favorite';
-    protected $primaryKey       = null;
+    protected $primaryKey       = 'id_user';
     protected $useAutoIncrement = false;
     protected $returnType       = 'array';
     protected $useSoftDeletes   = false;
@@ -29,4 +29,21 @@ class FavoriteModel extends Model
         ],
     ];
 
+    function switchFavorite($id_recipe, $id_user) {
+        if($this->hasFavorite( $id_recipe, $id_user)) {
+            $res = $this->delete(['id_recipe' => $id_recipe, 'id_user' => $id_user]);
+            return ['type' => 'delete', 'success' => $res];
+        } else {
+            $res = $this->insert(['id_recipe' => $id_recipe, 'id_user' => $id_user]);
+            return ['type' => 'insert', 'success' => $res];
+        }
+    }
+
+    function hasFavorite($id_recipe, $id_user) {
+        $favorite = $this->select('COUNT(*) as count')->where('id_recipe', $id_recipe)->where('id_user', $id_user)->first();
+        if ($favorite['count'] != 0) {
+            return true;
+        }
+        return false;
+    }
 }
