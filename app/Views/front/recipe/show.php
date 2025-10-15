@@ -13,18 +13,30 @@
     </div>
 </div>
 <div class="row">
-    <div class="col">
+    <div class="col text-center">
         <div data-value="1" id="scoreOpinion">
-            <i data-value="1" class="fas fa-xl fa-star"></i>
-            <i data-value="2" class="far fa-xl fa-star"></i>
-            <i data-value="3" class="far fa-xl fa-star"></i>
-            <i data-value="4" class="far fa-xl fa-star"></i>
-            <i data-value="5" class="far fa-xl fa-star"></i>
+            <i data-value="1" class="fas fa-2xl fa-star"></i>
+            <i data-value="2" class="far fa-2xl fa-star"></i>
+            <i data-value="3" class="far fa-2xl fa-star"></i>
+            <i data-value="4" class="far fa-2xl fa-star"></i>
+            <i data-value="5" class="far fa-2xl fa-star"></i>
         </div>
     </div>
-    <div class="col">
-        <!--TODO: Coeur de favoris qui sauvegarde au clique, sinon swal2 qui propose un lien vers /sign-in  -->
+    <div class="col text-center" id="favorite" data-value="0" >
+        <?php if( ($session_user != null) && $session_user->hasFavorite($recipe['id']) ) :
+            $text_favorite = 'Supprimer de mes favoris';
+            $class_favorite = 'fas';
+        else :
+            $text_favorite = 'Ajouter à mes favoris';
+            $class_favorite = 'far';
+        endif; ?>
+        <div id="heart" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?= $text_favorite ?>" title="<?= $text_favorite ?>">
+            <i class="<?= $class_favorite ?> fa-heart fa-2xl text-danger"></i>
+        </div>
+    </div>
+    <div class="col text-center">
         <!--TODO: Liens de partage de la page vers les reseaux sociaux (facebook / twitter)  -->
+        <?= social_share_links(current_url(), $recipe['name'] . ' - Ins3gram'); ?>
     </div>
 </div>
 <div class="row">
@@ -72,6 +84,7 @@
 </div>
 <script>
     $(document).ready(function () {
+
         /*
         var main = new Splide('#main-slider', {
             type       : 'fade',
@@ -144,14 +157,37 @@
                             console.log(response);
                         }
                     })
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: "Your file has been deleted.",
-                        icon: "success"
-                    });
                 }
             });
             <?php else : ?>
+            swalConnexion();
+            <?php endif; ?>
+        });
+        $('#favorite').on('click', '#heart', function(){
+            <?php if ($session_user != null) : ?>
+            $.ajax({
+                url : '<?= base_url('api/recipe/favorite'); ?>',
+                type : 'POST',
+                data : {
+                    id_user : '<?= $session_user->id ?? ""; ?>',
+                    id_recipe : '<?= $recipe['id']; ?>',
+                },
+                success : function(response) {
+                    const tooltip = bootstrap.Tooltip.getInstance('#heart');
+                    if(response.type == 'delete') {
+                        tooltip.setContent({ '.tooltip-inner': 'Ajouter à mes favoris' })
+                        $('#favorite .fa-heart').removeClass('fas').addClass('far');
+                    } else {
+                        tooltip.setContent({ '.tooltip-inner': 'Supprimer de mes favoris' })
+                        $('#favorite .fa-heart').removeClass('far').addClass('fas');
+                    }
+                }
+            })
+            <?php else : ?>
+            swalConnexion();
+            <?php endif; ?>
+        });
+        function swalConnexion() {
             Swal.fire({
                 title : "Vous n'êtes pas connecté(e) !",
                 text : "Veuillez vous connecter ou vous inscrire.",
@@ -174,13 +210,20 @@
                     window.location.href = "<?= base_url('sign-in'); ?>";
                 }
             });
-            <?php endif; ?>
-        });
+        }
     })
 </script>
 <style>
     .fa-star {
         color: var(--bs-warning);
         cursor: pointer;
+    }
+    .fa-heart:hover {
+        scale: 1.1;
+        cursor: pointer;
+    }
+    #heart {
+        width: fit-content;
+        margin: auto;
     }
 </style>

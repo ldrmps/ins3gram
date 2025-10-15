@@ -359,6 +359,10 @@ class Recipe extends BaseController
     }
 
     public function switchFavorite() {
-
+        $data = $this->request->getPost();
+        $fm = Model('FavoriteModel');
+        return $this->response->setJSON(
+            $fm->switchFavorite($data['id_recipe'], $data['id_user'])
+        );
     }
 }

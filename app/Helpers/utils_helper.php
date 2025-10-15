@@ -311,3 +311,50 @@ if (!function_exists('remove_filter_url')) {
         return build_filter_url([], true, null, $filters_array);
     }
 }
+
+if (!function_exists('social_share_links')) {
+    /**
+     * Génère les liens de partage pour une URL donnée
+     * @param string $url - Lien de la page à partager (par défaut l'URL actuelle)
+     * @param string $title - Titre à partager (optionnel)
+     * @param array $networks - Réseaux à inclure (optionnel)
+     * @return string - HTML des liens
+     */
+    function social_share_links($url = '', $title = '', $networks = ['facebook', 'twitter', 'linkedin', 'whatsapp'])
+    {
+
+        // Si aucun URL n'est passé, on prend l'URL actuelle
+        if (empty($url)) {
+            $url = current_url();
+        }
+
+        // Encodage pour utilisation dans les URLs
+        $encoded_url = urlencode($url);
+        $encoded_title = urlencode($title);
+
+        $links = [];
+
+        foreach ($networks as $network) {
+            switch ($network) {
+                case 'facebook':
+                    $links[] = '<a href="https://www.facebook.com/sharer/sharer.php?u=' . $encoded_url . '" target="_blank" title="Partager sur Facebook"><i class="fab fa-xl fa-facebook"></i></a>';
+                    break;
+
+                case 'twitter':
+                case 'x':
+                    $links[] = '<a href="https://twitter.com/intent/tweet?url=' . $encoded_url . '&text=' . $encoded_title . '" target="_blank" title="Partager sur X (Twitter)"><i class="fab  fa-xl fa-x-twitter"></i></a>';
+                    break;
+
+                case 'linkedin':
+                    $links[] = '<a href="https://www.linkedin.com/shareArticle?mini=true&url=' . $encoded_url . '&title=' . $encoded_title . '" target="_blank" title="Partager sur LinkedIn"><i class="fab fa-xl fa-linkedin"></i></a>';
+                    break;
+
+                case 'whatsapp':
+                    $links[] = '<a href="https://api.whatsapp.com/send?text=' . $encoded_title . '%20' . $encoded_url . '" target="_blank" title="Partager sur WhatsApp"><i class="fab fa-xl fa-whatsapp"></i></a>';
+                    break;
+            }
+        }
+
+        return '<div class="social-share-links">' . implode(' ', $links) . '</div>';
+    }
+}

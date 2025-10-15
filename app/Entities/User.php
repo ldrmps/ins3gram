@@ -88,5 +88,10 @@ class User extends Entity
         return $permission ? $permission['name'] : 'Utilisateur';
     }
 
+    public function hasFavorite(int $recipeId): bool
+    {
+        $fm = model('FavoriteModel');
+        return $fm->hasFavorite($this->attributes['id'], $recipeId);
+    }
 
 }
