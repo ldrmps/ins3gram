@@ -15,137 +15,89 @@ if (!function_exists('generate_slug')) {
 }
 
 if (!function_exists('upload_file')) {
-
     /**
-     * Gérer l'upload d'un fichier dans un dossier organisé par année/mois, avec un nom de fichier slugifié.
-     * Mettre à jour ou insérer les informations du média dans la base de données.
+     * Upload d’un fichier média avec gestion de l’Entity Media
      *
-     * @param \CodeIgniter\Files\File $file - Le fichier à uploader
-     * @param string $subfolder - Un sous-dossier optionnel pour organiser les fichiers
-     * @param string|null $customName - Le nom personnalisé pour le fichier (par exemple, nom d'utilisateur ou titre d'item)
-     * @param array|null $mediaData - Données du média à insérer dans la base de données
-     * @param bool $isMultiple - Indique si plusieurs images sont autorisées pour cet entity_id et entity_type
-     * @param array $acceptedMimeTypes - Liste des types MIME acceptés (par défaut : images seulement)
-     * @param int $maxSize - Taille maximale du fichier en Ko (par défaut : 2048 Ko = 2 Mo)
-     * @return array|bool|string - Le chemin du fichier uploadé ou un tableau d'erreur
-     * @throws ReflectionException
+     * @param \CodeIgniter\Files\File $file - Fichier à uploader
+     * @param string $subfolder - Sous-dossier (ex: avatars, recipes)
+     * @param string|null $customName - Nom personnalisé du fichier
+     * @param array|null $mediaData - Données associées (entity_id, entity_type, title, alt)
+     * @param bool $isMultiple - Si false, remplace l’ancien média lié
+     * @param array $acceptedMimeTypes - Types MIME autorisés
+     * @param int $maxSize - Taille max en Ko
+     * @return \App\Entities\Media|array - L’Entity Media ou un tableau d’erreur
      */
-    function upload_file(\CodeIgniter\Files\File $file, string $subfolder = '', ?string $customName = null, ?array $mediaData = null, bool $isMultiple = false, array $acceptedMimeTypes = ['image/jpeg', 'image/png', 'image/gif'], int $maxSize = 2048): array|bool|string
-    {
-
-        // Vérifier le code d'erreur d'upload
+    function upload_file(
+        \CodeIgniter\Files\File $file,
+        string                  $subfolder = '',
+        ?string                 $customName = null,
+        ?array                  $mediaData = null,
+        bool                    $isMultiple = false,
+        array                   $acceptedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+        int                     $maxSize = 2048
+    ) {
+        // 1️⃣ Vérification du fichier
         if ($file->getError() !== UPLOAD_ERR_OK) {
-            return [
-                'status' => 'error',
-                'message' => getUploadErrorMessage($file->getError())
-            ];
+            return ['status' => 'error', 'message' => getUploadErrorMessage($file->getError())];
         }
 
-        // Vérifier si le fichier a déjà été déplacé
         if ($file->hasMoved()) {
-            return [
-                'status' => 'error',
-                'message' => 'Le fichier a déjà été déplacé.'
-            ];
+            return ['status' => 'error', 'message' => 'Le fichier a déjà été déplacé.'];
         }
 
-        // Valider le type MIME
         if (!in_array($file->getMimeType(), $acceptedMimeTypes)) {
-            return [
-                'status' => 'error',
-                'message' => 'Type de fichier non accepté. Types acceptés : ' . implode(', ', $acceptedMimeTypes)
-            ];
+            return ['status' => 'error', 'message' => 'Type de fichier non accepté.'];
         }
 
-        // Valider la taille du fichier
         if ($file->getSizeByUnit('kb') > $maxSize) {
-            return [
-                'status' => 'error',
-                'message' => 'La taille du fichier dépasse la limite autorisée de ' . $maxSize . ' Ko.'
-            ];
+            return ['status' => 'error', 'message' => 'Fichier trop volumineux.'];
         }
-        // Vérifier que le fichier est valide
-        if (!$file->isValid()) {
-            return [
-                'status' => 'error',
-                'message' => 'Le fichier est invalide.'
-            ];
-        }
-        // Obtenir l'année et le mois actuels
-        $year = date('Y');
+
+        // 2️⃣ Définir le dossier de destination
+        $year  = date('Y');
         $month = date('m');
+        $uploadPath = FCPATH . 'uploads/' . trim($subfolder, '/') . '/' . $year . '/' . $month;
 
-        // Construire le chemin de l'upload dans /public/uploads/année/mois/
-        $uploadPath = "uploads/$year/$month";
-
-        // Ajouter un sous-dossier si spécifié
-        if (!empty($subfolder)) {
-            $uploadPath .= "/$subfolder";
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0775, true);
         }
 
-        // Créer le dossier s'il n'existe pas
-        if (!is_dir(FCPATH . $uploadPath)) {
-            mkdir(FCPATH . $uploadPath, 0755, true);
-        }
+        // 3️⃣ Générer un nom propre
+        helper('text');
+        $baseName = $customName ? url_title($customName, '-', true) : pathinfo($file->getClientName(), PATHINFO_FILENAME);
+        $ext = $file->getExtension();
+        $newName = $baseName . '-' . uniqid() . '.' . $ext;
 
-        // Générer un nom de fichier unique basé sur le nom personnalisé (ou un nom aléatoire)
-        if ($customName) {
-            // Générer un slug à partir du nom personnalisé
-            $slug = generateSlug($customName);
-            // Ajouter l'extension originale du fichier
-            $extension = $file->getExtension();
-            // Créer un nom unique en ajoutant un timestamp pour éviter les doublons
-            $newName = $slug . '-' . time() . '.' . $extension;
-        } else {
-            // Si aucun nom personnalisé, utiliser un nom aléatoire
-            $newName = $file->getRandomName();
-        }
+        // 4️⃣ Déplacer le fichier
+        $file->move($uploadPath, $newName);
+        $relativePath = 'uploads/' . trim($subfolder, '/') . '/' . $year . '/' . $month . '/' . $newName;
 
-        // Déplacer le fichier vers le dossier uploads/année/mois
-        if (!$file->move(FCPATH . $uploadPath, $newName)) {
-            return [
-                'status' => 'error',
-                'message' => 'Une erreur est survenue lors de l\'upload du fichier.'
-            ];
-        }
+        // 5️⃣ Enregistrer ou mettre à jour le média
+        $mediaModel = model('MediaModel');
 
-        // Retourner le chemin relatif du fichier
-        $filePath = "$uploadPath/$newName";
+        if (!$isMultiple && isset($mediaData['entity_id'], $mediaData['entity_type'])) {
+            $existing = $mediaModel
+                ->where('entity_id', $mediaData['entity_id'])
+                ->where('entity_type', $mediaData['entity_type'])
+                ->first();
 
-        // Gérer l'enregistrement du fichier dans la base de données si $mediaData est fourni
-        if ($mediaData) {
-            $mediaModel = model('MediaModel');
-
-            if ($isMultiple) {
-                // Pour les entités où plusieurs images sont autorisées, on insère directement
-                $mediaModel->insert(array_merge($mediaData, ['file_path' => $filePath]));
-            } else {
-                // Pour les entités avec une image unique, on gère la mise à jour ou la suppression des anciennes entrées
-                $existingMedia = $mediaModel->where([
-                    'entity_id' => $mediaData['entity_id'],
-                    'entity_type' => $mediaData['entity_type']
-                ])->first();
-
-                if ($existingMedia) {
-                    // Mettre à jour les champs file_path et created_at de l'enregistrement existant
-                    $mediaModel->update($existingMedia['id'], [
-                        'file_path' => $filePath,
-                        'created_at' => date('Y-m-d H:i:s')
-                    ]);
-                } else {
-                    // Supprimer les anciennes entrées pour le même entity_id et entity_type
-                    $mediaModel->where([
-                        'entity_id' => $mediaData['entity_id'],
-                        'entity_type' => $mediaData['entity_type']
-                    ])->delete();
-
-                    // Insérer le nouvel enregistrement
-                    $mediaModel->insert(array_merge($mediaData, ['file_path' => $filePath]));
+            if ($existing) {
+                // Supprimer l’ancien fichier
+                if ($existing->fileExists()) {
+                    @unlink($existing->getAbsolutePath());
                 }
+
+                // Mettre à jour l’existant
+                $mediaModel->update($existing->id, ['file_path' => $relativePath] + $mediaData);
+                return $mediaModel->find($existing->id);
             }
         }
 
-        return $filePath; // Retourner le chemin du fichier uploadé
+        // 6️⃣ Insertion d’un nouveau média
+        $data = array_merge(['file_path' => $relativePath], $mediaData ?? []);
+        $mediaId = $mediaModel->insert($data, true);
+
+        return $mediaModel->find($mediaId);
     }
 }
 
@@ -213,7 +165,7 @@ if (!function_exists('build_filter_url')) {
 
         // Exclusion de paramètres spécifiques si demandé
         foreach ($exclude_params as $key => $param) {
-            if (is_array($param)) {
+            if( is_array($param)){
                 foreach ($param as $value) {
                     unset($final_params[$key][$value]);
                 }
@@ -221,6 +173,7 @@ if (!function_exists('build_filter_url')) {
                 unset($final_params[$param]);
             }
         }
+
 
         // Nettoyage : suppression des valeurs vides/nulles
         $final_params = array_filter($final_params, function($value) {

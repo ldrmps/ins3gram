@@ -13,10 +13,6 @@
 
 ---
 
-** 💪Bon courage ! 💪**
-
----
-
 ## Introduction : Rappel sur les Entities
 
 Une **Entity** en CodeIgniter 4 est une classe qui représente une ligne de données d'une table. Elle permet de :
@@ -458,7 +454,7 @@ public function delete(): bool
 ```
 
 ### Question 5.2 ⚠️
-Cette méthode présente un **problème potentiel**. Si la suppression du fichier réussit mais que `$mediaModel->delete()` échoue, que se passe-t-il ? Comment pourriez-vous améliorer ce code ?
+Cette méthode présente un **problème potentiel**. Si la suppression du fichier réussit mais que `$mediaModel->delete()` échoue, que se passe-t-il ?
 
 <details>
 <summary>🤔 Problème identifié</summary>
@@ -469,13 +465,25 @@ Cette méthode présente un **problème potentiel**. Si la suppression du fichie
 
 **Résultat** : Le fichier n'existe plus sur le serveur mais l'entrée reste en base → **incohérence des données**.
 
+**La solution** : Utiliser une **transaction** dans le **MediaModel**, pas dans l'Entity !
+
 </details>
 
 ---
 
-### 📚 Comprendre les transactions
+### 📚 Comprendre les transactions et la séparation des responsabilités
 
-Avant d'améliorer notre code, comprenons ce qu'est une **transaction**.
+#### Principe important : Entity vs Model
+
+Avant de voir les transactions, rappelons les **responsabilités** :
+
+| Composant | Responsabilité | Exemples |
+|-----------|---------------|----------|
+| **Entity** | Logique métier sur **une ligne** | `isImage()`, `getUrl()`, `fileExists()` |
+| **Model** | Accès à la **base de données** | Requêtes SQL, transactions, validation |
+| **Controller** | Orchestration | Appeler le model, gérer les réponses |
+
+**Règle d'or** : Une Entity ne doit **jamais** se connecter directement à la base de données !
 
 #### Qu'est-ce qu'une transaction ?
 
@@ -506,103 +514,190 @@ Les transactions garantissent 4 propriétés (ACID) :
 3. **Isolation** : Les transactions ne s'interfèrent pas entre elles
 4. **Durabilité** : Une fois validée, la transaction est permanente
 
-#### Syntaxe dans CodeIgniter 4
+---
 
-```php
-$db = \Config\Database::connect();
+### Étape 5.3 : Simplifier la méthode delete() de l'Entity
 
-// Démarrer une transaction
-$db->transStart();
-
-// Opérations de la base de données
-$db->query("DELETE FROM media WHERE id = ?", [$id]);
-$db->query("UPDATE recipe SET image = NULL WHERE id = ?", [$recipeId]);
-
-// Finaliser la transaction
-$db->transComplete();
-
-// Vérifier le statut
-if ($db->transStatus() === false) {
-    // Au moins une opération a échoué → tout a été annulé
-    echo "Erreur : transaction annulée";
-} else {
-    // Tout s'est bien passé
-    echo "Transaction réussie";
-}
-```
-
-### Question 5.2 bis 🛠️
-Maintenant que vous comprenez les transactions, réécrivez la méthode `delete()` en utilisant une transaction pour garantir la cohérence.
-
-<details>
-<summary>✅ Solution avec transaction</summary>
+**Nouvelle version simplifiée** dans `Media.php` :
 
 ```php
 /**
- * Supprime le fichier physique ET l'entrée en base de données de manière atomique
+ * Supprime le média (délègue au MediaModel)
  * 
  * @return bool Succès de la suppression
  */
 public function delete(): bool
 {
-    // Connexion à la base de données
-    $db = \Config\Database::connect();
-    
-    // Vérifier que l'ID existe
     if (empty($this->id)) {
         return false;
     }
     
+    $mediaModel = model('MediaModel');
+    
+    // Déléguer la suppression au Model qui gère la transaction
+    return $mediaModel->deleteMedia($this->id);
+}
+```
+
+### Question 5.3 🤔
+Pourquoi cette nouvelle version est-elle plus simple et respecte-t-elle mieux l'architecture MVC ?
+
+<details>
+<summary>✅ Réponse</summary>
+
+**Avantages** :
+1. **Séparation des responsabilités** : L'Entity ne fait que déléguer au Model
+2. **Simplicité** : Pas de logique de transaction dans l'Entity
+3. **Réutilisabilité** : Le Model peut être appelé depuis n'importe où
+4. **Testabilité** : Plus facile de mocker le Model dans les tests
+
+**L'Entity se concentre sur** :
+- Les getters/setters
+- Les méthodes métier (calculs, formatage)
+- La validation locale
+
+**Le Model se concentre sur** :
+- Les requêtes SQL
+- Les transactions
+- La cohérence des données
+
+</details>
+
+---
+
+### Étape 5.4 : Améliorer le MediaModel avec une transaction
+
+Maintenant, modifions la méthode `deleteMedia()` dans `MediaModel.php` :
+
+```php
+/**
+ * Supprime un média (fichier + BDD) avec transaction
+ * 
+ * @param int $id ID du média à supprimer
+ * @return bool Succès de la suppression
+ */
+public function deleteMedia($id): bool
+{
+    // Récupérer le média
+    $media = $this->find($id);
+    
+    if (!$media) {
+        return false;
+    }
+    
     // Démarrer une transaction
-    $db->transStart();
+    $this->db->transStart();
     
     try {
-        $mediaModel = model('MediaModel');
-        
         // 1. Supprimer l'entrée en BDD d'abord
-        if (!$mediaModel->delete($this->id)) {
+        if (!$this->delete($id)) {
             throw new \Exception("Échec de la suppression en base de données");
         }
         
         // 2. Ensuite supprimer le fichier physique
-        if ($this->fileExists()) {
-            if (!unlink($this->getAbsolutePath())) {
+        if ($media->fileExists()) {
+            $filePath = $media->getAbsolutePath();
+            
+            if (!unlink($filePath)) {
                 throw new \Exception("Échec de la suppression du fichier physique");
             }
         }
         
         // Finaliser la transaction
-        $db->transComplete();
+        $this->db->transComplete();
         
-        // Vérifier le statut de la transaction
-        if ($db->transStatus() === false) {
-            log_message('error', "Transaction échouée pour le média ID {$this->id}");
+        // Vérifier le statut
+        if ($this->db->transStatus() === false) {
+            log_message('error', "Transaction échouée pour le média ID {$id}");
             return false;
         }
         
         return true;
         
     } catch (\Exception $e) {
-        // En cas d'erreur, annuler la transaction
-        $db->transRollback();
+        // Annuler la transaction en cas d'erreur
+        $this->db->transRollback();
         log_message('error', 'Erreur suppression média : ' . $e->getMessage());
         return false;
     }
 }
 ```
 
-**Explication du flux** :
-1. Si la suppression BDD échoue → Exception levée → Rollback automatique
-2. Si la suppression fichier échoue → Exception levée → Rollback (l'entrée BDD est restaurée)
-3. Si tout réussit → Commit automatique à `transComplete()`
+### Question 5.4 🔍
+Pourquoi utilise-t-on `$this->db` dans le Model au lieu de `\Config\Database::connect()` ?
 
-**Important** : Dans CodeIgniter 4, `transStart()` / `transComplete()` gère automatiquement le commit/rollback en fonction des erreurs détectées. Le `try/catch` permet une gestion plus fine.
+<details>
+<summary>✅ Réponse</summary>
+
+**Dans CodeIgniter 4**, le Model hérite de `CodeIgniter\Model` qui possède déjà une propriété `$db` :
+
+```php
+class MediaModel extends Model
+{
+    // $this->db est automatiquement disponible !
+}
+```
+
+**Avantages** :
+- Pas besoin de reconnecter à chaque fois
+- Utilise la même connexion pour toutes les requêtes du Model
+- Plus performant (réutilisation de la connexion)
+- Plus cohérent avec l'architecture CodeIgniter
+
+**Alternative** (à éviter dans un Model) :
+```php
+$db = \Config\Database::connect(); // ❌ Crée une nouvelle connexion
+```
 
 </details>
 
 ---
 
-### Question 5.3 💭
+### Question 5.5 📊
+Analysez le flux de la transaction. Que se passe-t-il dans chacun de ces cas ?
+
+**Cas A** : La suppression BDD réussit, mais `unlink()` échoue
+**Cas B** : La suppression BDD échoue
+**Cas C** : Tout réussit
+
+<details>
+<summary>✅ Réponse détaillée</summary>
+
+**Cas A : BDD OK, unlink échoue**
+```
+1. transStart() → Transaction démarre
+2. delete($id) → ✅ Réussi (mais pas encore committé)
+3. unlink() → ❌ Échoue
+4. throw Exception
+5. transRollback() → Annulation
+6. Résultat : L'entrée BDD est RESTAURÉE, fichier toujours présent
+```
+
+**Cas B : BDD échoue**
+```
+1. transStart() → Transaction démarre
+2. delete($id) → ❌ Échoue
+3. throw Exception (on ne va même pas à unlink)
+4. transRollback() → Annulation
+5. Résultat : Rien n'a changé
+```
+
+**Cas C : Tout réussit**
+```
+1. transStart() → Transaction démarre
+2. delete($id) → ✅ Réussi
+3. unlink() → ✅ Réussi
+4. transComplete() → Commit
+5. Résultat : Média supprimé (BDD + fichier)
+```
+
+**Important** : Grâce à la transaction, on n'aura **jamais** une situation où le fichier est supprimé mais pas l'entrée BDD (ou l'inverse).
+
+</details>
+
+---
+
+### Question 5.6 💭
 Pourquoi supprime-t-on **d'abord** l'entrée en BDD puis le fichier, et pas l'inverse ?
 
 <details>
@@ -611,12 +706,29 @@ Pourquoi supprime-t-on **d'abord** l'entrée en BDD puis le fichier, et pas l'in
 **Ordre recommandé : BDD → Fichier**
 
 **Raisons** :
-1. **Rollback possible** : Si on supprime le fichier d'abord et que la BDD échoue, on ne peut pas "annuler" la suppression du fichier
-2. **Impact utilisateur** : Une entrée BDD orpheline (sans fichier) est moins grave qu'un fichier orphelin (sans entrée BDD)
-3. **Nettoyage** : Il est plus facile de faire un script de nettoyage pour supprimer les fichiers orphelins que l'inverse
+1. **Rollback possible** : Si on supprime le fichier d'abord et que la BDD échoue, on ne peut pas "annuler" la suppression du fichier physique
+2. **Transactions ne gèrent que la BDD** : Les opérations fichier (unlink) ne font pas partie de la transaction SQL
+3. **Impact utilisateur** : Une entrée BDD sans fichier peut afficher une image par défaut, un fichier sans entrée BDD reste orphelin à jamais
+
+**Schéma de l'ordre** :
+```
+✅ BON ORDRE :
+1. DELETE FROM media (dans transaction)
+2. Si échec → rollback → STOP
+3. unlink() fichier
+4. Si échec → fichier reste mais on sait que l'entrée BDD n'existe plus
+
+❌ MAUVAIS ORDRE :
+1. unlink() fichier
+2. Si tout OK → fichier supprimé
+3. DELETE FROM media
+4. Si échec → fichier disparu mais entrée BDD reste → INCOHÉRENCE !
+```
 
 **Cas exceptionnel** :
-Si le fichier est très volumineux (plusieurs Go), on peut préférer le supprimer en premier pour libérer l'espace disque immédiatement, mais c'est rare.
+Pour des fichiers très volumineux (plusieurs Go), on peut préférer supprimer le fichier d'abord pour libérer l'espace disque, mais il faut alors :
+- Logger l'opération
+- Avoir un système de nettoyage des entrées BDD orphelines
 
 </details>
 
@@ -706,8 +818,201 @@ $media?->delete();
 </details>
 
 ---
+## Partie 7 : Mise à jour du helper `utils` pour la compatibilité avec l’Entity Media
 
-## Partie 7 : Application pratique - Ajouter un avatar à l'Entity User
+### Étape 7.1 : Comprendre le problème
+
+Avant la refonte, `upload_file()` :
+- insérait les données manuellement dans la table `media`,
+- retournait parfois un **chemin de fichier** ou un **tableau d’erreur**.
+
+Or, depuis la Partie 6 :
+- le `MediaModel` renvoie une **Entity**,
+- les méthodes comme `$media->getUrl()` ou `$media->delete()` dépendent de cette Entity.
+
+> 🔧 Il faut donc faire en sorte que `upload_file()` :
+> 1. Crée le fichier physique,
+> 2. Crée ou mette à jour l’entrée `Media` via le `MediaModel`,
+> 3. Retourne directement **une instance de `App\Entities\Media`**.
+
+---
+
+### Étape 7.2 : Nouvelle version de `upload_file()`
+
+Ouvrez `app/Helpers/utils_helper.php` et modifiez la fonction existante :
+
+```php
+if (!function_exists('upload_file')) {
+    /**
+     * Upload d’un fichier média avec gestion de l’Entity Media
+     *
+     * @param \CodeIgniter\Files\File $file - Fichier à uploader
+     * @param string $subfolder - Sous-dossier (ex: avatars, recipes)
+     * @param string|null $customName - Nom personnalisé du fichier
+     * @param array|null $mediaData - Données associées (entity_id, entity_type, title, alt)
+     * @param bool $isMultiple - Si false, remplace l’ancien média lié
+     * @param array $acceptedMimeTypes - Types MIME autorisés
+     * @param int $maxSize - Taille max en Ko
+     * @return \App\Entities\Media|array - L’Entity Media ou un tableau d’erreur
+     */
+    function upload_file(
+        \CodeIgniter\Files\File $file,
+        string $subfolder = '',
+        string $customName = null,
+        array $mediaData = null,
+        bool $isMultiple = false,
+        array $acceptedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+        int $maxSize = 2048
+    ) {
+        // 1️⃣ Vérification du fichier
+        if ($file->getError() !== UPLOAD_ERR_OK) {
+            return ['status' => 'error', 'message' => getUploadErrorMessage($file->getError())];
+        }
+
+        if ($file->hasMoved()) {
+            return ['status' => 'error', 'message' => 'Le fichier a déjà été déplacé.'];
+        }
+
+        if (!in_array($file->getMimeType(), $acceptedMimeTypes)) {
+            return ['status' => 'error', 'message' => 'Type de fichier non accepté.'];
+        }
+
+        if ($file->getSizeByUnit('kb') > $maxSize) {
+            return ['status' => 'error', 'message' => 'Fichier trop volumineux.'];
+        }
+
+        // 2️⃣ Définir le dossier de destination
+        $year  = date('Y');
+        $month = date('m');
+        $uploadPath = FCPATH . 'uploads/' . trim($subfolder, '/') . '/' . $year . '/' . $month;
+
+        if (!is_dir($uploadPath)) {
+            mkdir($uploadPath, 0775, true);
+        }
+
+        // 3️⃣ Générer un nom propre
+        helper('text');
+        $baseName = $customName ? url_title($customName, '-', true) : pathinfo($file->getClientName(), PATHINFO_FILENAME);
+        $ext = $file->getExtension();
+        $newName = $baseName . '-' . uniqid() . '.' . $ext;
+
+        // 4️⃣ Déplacer le fichier
+        $file->move($uploadPath, $newName);
+        $relativePath = 'uploads/' . trim($subfolder, '/') . '/' . $year . '/' . $month . '/' . $newName;
+
+        // 5️⃣ Enregistrer ou mettre à jour le média
+        $mediaModel = model('MediaModel');
+
+        if (!$isMultiple && isset($mediaData['entity_id'], $mediaData['entity_type'])) {
+            $existing = $mediaModel
+                ->where('entity_id', $mediaData['entity_id'])
+                ->where('entity_type', $mediaData['entity_type'])
+                ->first();
+
+            if ($existing) {
+                // Supprimer l’ancien fichier
+                if ($existing->fileExists()) {
+                    @unlink($existing->getAbsolutePath());
+                }
+
+                // Mettre à jour l’existant
+                $mediaModel->update($existing->id, ['file_path' => $relativePath] + $mediaData);
+                return $mediaModel->find($existing->id);
+            }
+        }
+
+        // 6️⃣ Insertion d’un nouveau média
+        $data = array_merge(['file_path' => $relativePath], $mediaData ?? []);
+        $mediaId = $mediaModel->insert($data, true);
+
+        return $mediaModel->find($mediaId);
+    }
+}
+```
+
+---
+
+### Étape 7.3 : Points clés de cette version
+
+| Étape | Action | Explication |
+|:------|:--------|:------------|
+| 1 | Vérification du fichier | Empêche les uploads invalides ou trop lourds |
+| 2 | Création du dossier | Organise les fichiers par `année/mois` |
+| 3 | Génération du nom | Évite les collisions avec `uniqid()` |
+| 4 | Déplacement du fichier | Sauvegarde physique côté serveur |
+| 5 | Vérification de doublon | Si `$isMultiple = false`, remplace l’ancien fichier |
+| 6 | Création d’un nouvel enregistrement | Retourne directement une instance `Media` |
+
+---
+
+### Étape 7.4 : Exemple d’utilisation
+
+Avec le code du contrôleur vu en **Partie 8.5**, vous pouvez désormais écrire :
+
+```php
+$result = upload_file(
+    $avatarFile,
+    'avatars',
+    $user->username,
+    [
+        'entity_id' => $user->id,
+        'entity_type' => 'user',
+        'title' => 'Avatar de ' . $user->username,
+        'alt' => 'Photo de profil'
+    ]
+);
+
+if ($result instanceof \App\Entities\Media) {
+    echo "✅ Upload réussi : " . $result->getUrl();
+} else {
+    echo "❌ Erreur : " . $result['message'];
+}
+```
+
+---
+
+### Question 7.1 🧠
+Pourquoi retourne-t-on **une instance `Media`** plutôt qu’un simple tableau contenant `file_path` ?
+
+<details>
+<summary>✅ Réponse</summary>
+
+Parce que :
+- L’Entity offre des **méthodes utilitaires** (`getUrl()`, `delete()`, `fileExists()`).
+- Elle garantit la **cohérence** avec le `MediaModel`.
+- Les contrôleurs de la Partie 8 et 9 attendent **un objet Media**, pas un tableau.
+</details>
+
+---
+
+### Question 7.2 ⚙️
+Que se passe-t-il si `$isMultiple = false` et qu’un média existe déjà pour le même `entity_id` et `entity_type` ?
+
+<details>
+<summary>✅ Réponse</summary>
+
+L’ancien média est :
+1. Supprimé physiquement du serveur (`unlink()`),
+2. Mis à jour en BDD avec le **nouveau chemin**,
+3. Retourne la même Entity, mise à jour avec le nouveau fichier.
+</details>
+
+---
+
+### Question 7.3 🚀
+Pourquoi est-il utile que `upload_file()` crée automatiquement le dossier `uploads/[subfolder]/[année]/[mois]` ?
+
+<details>
+<summary>✅ Réponse</summary>
+
+- **Organisation naturelle** : évite les dossiers saturés.
+- **Traçabilité** : facilite les sauvegardes et nettoyages mensuels.
+- **Compatibilité** : fonctionne pour tout type d’entité (user, recipe, etc.).
+</details>
+
+---
+
+## Partie 8 : Application pratique - Ajouter un avatar à l'Entity User
 
 Maintenant que vous maîtrisez l'Entity Media, appliquons ces connaissances pour gérer l'**avatar** d'un utilisateur.
 
@@ -717,7 +1022,7 @@ Dans votre application, les utilisateurs peuvent avoir un avatar (photo de profi
 - `entity_type = 'user'`
 - `entity_id = id de l'utilisateur`
 
-### Question 7.1 🤔
+### Question 8.1 🤔
 D'après vous, quelle relation existe-t-il entre les tables `user` et `media` pour les avatars ?
 
 <details>
@@ -742,7 +1047,7 @@ C'est différent des recettes qui peuvent avoir **plusieurs images** (relation 1
 
 ---
 
-### Étape 7.1 : Ajouter une méthode getAvatar() dans User.php
+### Étape 8.1 : Ajouter une méthode getAvatar() dans User.php
 
 Ouvrez `app/Entities/User.php` et ajoutez cette méthode :
 
@@ -765,7 +1070,7 @@ public function getAvatar(): ?Media
 }
 ```
 
-### Question 7.2 📝
+### Question 8.2 📝
 Pourquoi le type de retour est `?Media` et pas `Media` ?
 
 <details>
@@ -792,7 +1097,7 @@ if ($avatar !== null) {
 
 ---
 
-### Étape 7.2 : Méthode pour obtenir l'URL de l'avatar avec fallback
+### Étape 8.2 : Méthode pour obtenir l'URL de l'avatar avec fallback
 
 ```php
 /**
@@ -813,7 +1118,7 @@ public function getAvatarUrl(string $default = 'assets/img/default-avatar.png'):
 }
 ```
 
-### Question 7.3 🎨
+### Question 8.3 🎨
 Pourquoi vérifier `$avatar->fileExists()` en plus de tester si `$avatar` existe ?
 
 <details>
@@ -835,7 +1140,7 @@ Pourquoi vérifier `$avatar->fileExists()` en plus de tester si `$avatar` existe
 
 ---
 
-### Étape 7.3 : Méthode pour vérifier si l'utilisateur a un avatar
+### Étape 8.3 : Méthode pour vérifier si l'utilisateur a un avatar
 
 ```php
 /**
@@ -852,7 +1157,7 @@ public function hasAvatar(): bool
 
 ---
 
-### Étape 7.4 : Utilisation dans la vue
+### Étape 8.4 : Utilisation dans la vue
 
 Modifiez le formulaire `form.php` pour afficher l'avatar :
 
@@ -893,7 +1198,7 @@ Modifiez le formulaire `form.php` pour afficher l'avatar :
 </div>
 ```
 
-### Question 7.4 🖼️
+### Question 8.4 🖼️
 À quoi sert l'attribut `accept="image/jpeg,image/png,image/gif,image/webp"` dans l'input file ?
 
 <details>
@@ -920,7 +1225,7 @@ if (!in_array($file->getMimeType(), ['image/jpeg', 'image/png', 'image/gif', 'im
 
 ---
 
-### Étape 7.5 : Traitement de l'upload dans le contrôleur
+### Étape 8.5 : Traitement de l'upload dans le contrôleur
 
 Modifiez la méthode `update()` dans `app/Controllers/Admin/User.php` :
 
@@ -986,7 +1291,7 @@ public function update()
 }
 ```
 
-### Question 7.5 🔍
+### Question 8.5 🔍
 Observez le code ci-dessus. Que fait le paramètre `false` dans `upload_file()` ? Quelle est sa signification ?
 
 <details>
@@ -1037,7 +1342,7 @@ upload_file($file, 'recipes', 'recette-1', [
 
 ---
 
-### Étape 7.6 : Méthode pour supprimer l'avatar
+### Étape 8.6 : Méthode pour supprimer l'avatar
 
 Ajoutez dans `User.php` :
 
@@ -1061,7 +1366,7 @@ public function deleteAvatar(): bool
 
 ---
 
-### Question 7.6 🧩
+### Question 8.6 🧩
 Créez un bouton dans le formulaire qui permet de supprimer l'avatar actuel (uniquement si l'utilisateur en a un).
 
 <details>
@@ -1144,12 +1449,12 @@ $routes->post('admin/user/delete-avatar', 'Admin\User::deleteAvatar', ['filter' 
 
 ---
 
-## Partie 8 : Code complet et test
+## Partie 9 : Code complet et test
 
-### Code final de l'Entity
+### 9.1 Code final de l'Entity Media
 
 <details>
-<summary>📄 Voir Media.php complet</summary>
+<summary>📄 Voir Media.php complet et fonctionnel</summary>
 
 ```php
 <?php
@@ -1186,38 +1491,59 @@ class Media extends Entity
 
     protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
+    /**
+     * Retourne l'URL complète du fichier média
+     */
     public function getUrl(): string
     {
         return base_url($this->file_path);
     }
 
+    /**
+     * Retourne l'extension du fichier en minuscules
+     */
     public function getFileExtension(): string
     {
         return strtolower(pathinfo($this->file_path, PATHINFO_EXTENSION));
     }
 
+    /**
+     * Vérifie si le média est une image
+     */
     public function isImage(): bool
     {
         $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
         return in_array($this->getFileExtension(), $imageExtensions);
     }
 
+    /**
+     * Vérifie si le type d'entité est valide
+     */
     public function isValidEntityType(): bool
     {
         $validTypes = ['user', 'recipe', 'recipe_mea', 'step', 'ingredient', 'brand'];
         return in_array($this->entity_type, $validTypes);
     }
 
+    /**
+     * Retourne le chemin absolu du fichier sur le serveur
+     */
     public function getAbsolutePath(): string
     {
         return FCPATH . $this->file_path;
     }
 
+    /**
+     * Vérifie si le fichier existe physiquement
+     */
     public function fileExists(): bool
     {
         return file_exists($this->getAbsolutePath());
     }
 
+    /**
+     * Retourne la taille du fichier en octets (ou false si inexistant)
+     */
     public function getFileSize(): int|false
     {
         if (!$this->fileExists()) {
@@ -1226,6 +1552,9 @@ class Media extends Entity
         return filesize($this->getAbsolutePath());
     }
 
+    /**
+     * Retourne la taille du fichier formatée (ex: "1.5 MB")
+     */
     public function getFormattedFileSize(): string
     {
         $size = $this->getFileSize();
@@ -1240,19 +1569,21 @@ class Media extends Entity
         return round($size / pow(1024, $power), 2) . ' ' . $units[$power];
     }
 
+    /**
+     * Supprime le média (délègue au MediaModel)
+     * 
+     * @return bool Succès de la suppression
+     */
     public function delete(): bool
     {
-        $mediaModel = model('MediaModel');
-        
         if (empty($this->id)) {
             return false;
         }
         
-        if ($this->fileExists()) {
-            unlink($this->getAbsolutePath());
-        }
+        $mediaModel = model('MediaModel');
         
-        return $mediaModel->delete($this->id);
+        // Déléguer la suppression au Model qui gère la transaction
+        return $mediaModel->deleteMedia($this->id);
     }
 }
 ```
@@ -1261,7 +1592,547 @@ class Media extends Entity
 
 ---
 
-### Exercice final : Créer un contrôleur de test
+### 9.2 Code final du MediaModel (avec transaction)
+
+<details>
+<summary>📄 Voir MediaModel.php complet et mis à jour</summary>
+
+```php
+<?php
+
+namespace App\Models;
+
+use CodeIgniter\Model;
+
+class MediaModel extends Model
+{
+    protected $table            = 'media';
+    protected $primaryKey       = 'id';
+    protected $useAutoIncrement = true;
+    protected $returnType       = 'App\Entities\Media'; // ← Modifié pour utiliser l'Entity
+    protected $useSoftDeletes   = false;
+    protected $protectFields    = true;
+    protected $allowedFields    = ['file_path','entity_id', 'entity_type','title','alt'];
+    
+    // Dates
+    protected $useTimestamps = true;
+    protected $dateFormat    = 'datetime';
+    protected $createdField  = 'created_at';
+    protected $updatedField  = 'updated_at';
+    protected $deletedField  = 'deleted_at';
+
+    protected $validationRules = [
+        'file_path'   => 'required|string|is_unique[media.file_path,id,{id}]',
+        'entity_id'   => 'required|integer',
+        'entity_type' => 'required|in_list[user,recipe,recipe_mea,step,ingredient,brand]',
+        'title'       => 'permit_empty|max_length[255]',
+        'alt'         => 'permit_empty|max_length[255]',
+    ];
+
+    protected $validationMessages = [
+        'file_path' => [
+            'required'  => 'Le chemin du fichier est obligatoire.',
+            'is_unique' => 'Ce fichier existe déjà.',
+        ],
+        'entity_id' => [
+            'required' => 'L'ID de l'entité est obligatoire.',
+            'integer'  => 'L'ID de l'entité doit être un nombre.',
+        ],
+        'entity_type' => [
+            'required' => 'Le type d'entité est obligatoire.',
+            'in_list'  => 'Le type d'entité doit être parmi : user, recipe, step, ingredient ou brand.',
+        ],
+        'title' => [
+            'max_length' => 'Le titre ne peut pas dépasser 255 caractères.',
+        ],
+        'alt' => [
+            'max_length' => 'Le texte alternatif ne peut pas dépasser 255 caractères.',
+        ],
+    ];
+
+    /**
+     * Supprime un média (fichier + BDD) avec transaction
+     * 
+     * @param int $id ID du média à supprimer
+     * @return bool Succès de la suppression
+     */
+    public function deleteMedia($id): bool
+    {
+        // Récupérer le média
+        $media = $this->find($id);
+        
+        if (!$media) {
+            return false;
+        }
+        
+        // Démarrer une transaction
+        $this->db->transStart();
+        
+        try {
+            // 1. Supprimer l'entrée en BDD d'abord
+            if (!$this->delete($id)) {
+                throw new \Exception("Échec de la suppression en base de données");
+            }
+            
+            // 2. Ensuite supprimer le fichier physique
+            if ($media->fileExists()) {
+                $filePath = $media->getAbsolutePath();
+                
+                if (!unlink($filePath)) {
+                    throw new \Exception("Échec de la suppression du fichier physique");
+                }
+            }
+            
+            // Finaliser la transaction
+            $this->db->transComplete();
+            
+            // Vérifier le statut
+            if ($this->db->transStatus() === false) {
+                log_message('error', "Transaction échouée pour le média ID {$id}");
+                return false;
+            }
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            // Annuler la transaction en cas d'erreur
+            $this->db->transRollback();
+            log_message('error', 'Erreur suppression média : ' . $e->getMessage());
+            return false;
+        }
+    }
+}
+```
+
+</details>
+
+---
+
+### 9.3 Code complet de l'Entity User (avec méthodes avatar)
+
+<details>
+<summary>📄 Voir User.php avec les méthodes avatar ajoutées</summary>
+
+```php
+<?php
+
+namespace App\Entities;
+
+use CodeIgniter\Entity\Entity;
+use App\Entities\Media;
+
+class User extends Entity
+{
+    protected $attributes = [
+        'id'            => null,
+        'email'         => null,
+        'password'      => null,
+        'username'      => null,
+        'first_name'    => null,
+        'last_name'     => null,
+        'birthdate'     => null,
+        'id_permission' => 2,
+        'created_at'    => null,
+        'updated_at'    => null,
+        'deleted_at'    => null,
+    ];
+    
+    protected $casts = [
+        'id'            => 'integer',
+        'email'         => 'string',
+        'password'      => 'string',
+        'username'      => 'string',
+        'first_name'    => 'string',
+        'last_name'     => 'string',
+        'birthdate'     => 'datetime',
+        'id_permission' => 'integer',
+        'created_at'    => 'datetime',
+        'updated_at'    => 'datetime',
+        'deleted_at'    => 'datetime',
+    ];
+
+    protected $hidden = ['password'];
+    protected $dates   = ['created_at', 'updated_at', 'deleted_at', 'birthdate'];
+
+    public function getFullName(): string
+    {
+        return trim($this->attributes['first_name'] . ' ' . $this->attributes['last_name']);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->attributes['deleted_at'] === null;
+    }
+
+    public function setPassword(string $password)
+    {
+        $this->attributes['password'] = password_hash($password, PASSWORD_DEFAULT);
+        return $this;
+    }
+    
+    public function verifyPassword(string $password): bool
+    {
+        return password_verify($password, $this->attributes['password']);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->check('administrateur');
+    }
+
+    public function check(string $slug): bool
+    {
+        $userPermissionSlug = $this->getPermissionSlug();
+
+        if ($userPermissionSlug === $slug) {
+            return true;
+        }
+        return false;
+    }
+
+    public function getPermissionSlug(): string
+    {
+        $upm = model('UserPermissionModel');
+        $permission = $upm->find($this->attributes['id_permission']);
+
+        return $permission ? $permission['slug'] : 'utilisateur';
+    }
+
+    public function getPermissionName(): string
+    {
+        $upm = model('UserPermissionModel');
+        $permission = $upm->find($this->attributes['id_permission']);
+
+        return $permission ? $permission['name'] : 'Utilisateur';
+    }
+
+    /**
+     * Récupère l'avatar de l'utilisateur
+     * 
+     * @return Media|null L'instance Media de l'avatar ou null
+     */
+    public function getAvatar(): ?Media
+    {
+        $mediaModel = model('MediaModel');
+        
+        $avatar = $mediaModel
+            ->where('entity_type', 'user')
+            ->where('entity_id', $this->id)
+            ->first();
+        
+        return $avatar;
+    }
+
+    /**
+     * Retourne l'URL de l'avatar ou une image par défaut
+     * 
+     * @param string $default URL de l'image par défaut
+     * @return string URL de l'avatar
+     */
+    public function getAvatarUrl(string $default = 'assets/img/default-avatar.png'): string
+    {
+        $avatar = $this->getAvatar();
+        
+        if ($avatar && $avatar->fileExists()) {
+            return $avatar->getUrl();
+        }
+        
+        return base_url($default);
+    }
+
+    /**
+     * Vérifie si l'utilisateur a un avatar valide
+     * 
+     * @return bool
+     */
+    public function hasAvatar(): bool
+    {
+        $avatar = $this->getAvatar();
+        return $avatar !== null && $avatar->fileExists();
+    }
+
+    /**
+     * Supprime l'avatar de l'utilisateur
+     * 
+     * @return bool Succès de la suppression
+     */
+    public function deleteAvatar(): bool
+    {
+        $avatar = $this->getAvatar();
+        
+        if ($avatar === null) {
+            return false;
+        }
+        
+        return $avatar->delete();
+    }
+}
+```
+
+</details>
+
+---
+
+### 9.4 Contrôleur User.php mis à jour (avec gestion avatar)
+
+<details>
+<summary>📄 Voir Admin/User.php avec upload et suppression d'avatar</summary>
+
+```php
+<?php
+
+namespace App\Controllers\Admin;
+
+use App\Controllers\BaseController;
+
+class User extends BaseController
+{
+    public function index()
+    {
+        return $this->view('/admin/user/index');
+    }
+
+    public function edit($id_user) 
+    {
+        $um = Model('UserModel');
+        $user = $um->find($id_user);
+        
+        if (!$user) {
+            $this->error('Utilisateur inexistant');
+            return $this->redirect('/admin/user');
+        }
+        
+        helper('form');
+        $permissions = Model('UserPermissionModel')->findAll();
+        
+        return $this->view('/admin/user/form', [
+            'user' => $user, 
+            'permissions' => $permissions
+        ]);
+    }
+
+    public function create() 
+    {
+        helper('form');
+        $permissions = Model('UserPermissionModel')->findAll();
+
+        return $this->view('/admin/user/form', ['permissions' => $permissions]);
+    }
+
+    public function update()
+    {
+        $userModel = model('UserModel');
+        $data = $this->request->getPost();
+        $id = $this->request->getPost('id');
+
+        $user = $userModel->find($id);
+
+        if (!$user) {
+            $this->error('Utilisateur inexistant');
+            return $this->redirect('/admin/user');
+        }
+
+        // Gestion du mot de passe
+        if (empty($data['password'])) {
+            unset($data['password']);
+        }
+
+        // Remplir l'utilisateur avec les nouvelles données
+        $user->fill($data);
+
+        // Gestion de l'avatar
+        $avatarFile = $this->request->getFile('avatar');
+        
+        if ($avatarFile && $avatarFile->isValid() && !$avatarFile->hasMoved()) {
+            helper('utils');
+            
+            $result = upload_file(
+                $avatarFile,
+                'avatars',
+                $user->username,
+                [
+                    'entity_id' => $user->id,
+                    'entity_type' => 'user',
+                    'title' => 'Avatar de ' . $user->username,
+                    'alt' => 'Photo de profil de ' . $user->username
+                ],
+                false, // Un seul avatar par utilisateur
+                ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+                2048 // 2 Mo max
+            );
+            
+            if (is_array($result) && $result['status'] === 'error') {
+                $this->error($result['message']);
+            } else {
+                $this->success('Avatar mis à jour avec succès.');
+            }
+        }
+
+        // Sauvegarde de l'utilisateur
+        if ($userModel->save($user)) {
+            $this->success('Utilisateur mis à jour avec succès.');
+            return $this->redirect('/admin/user/' . $user->id);
+        } else {
+            $errors = $userModel->errors();
+            foreach ($errors as $error) {
+                $this->error($error);
+            }
+            return $this->redirect('/admin/user/' . $user->id);
+        }
+    }
+
+    public function insert() 
+    {
+        $userModel = model('UserModel');
+        $data = $this->request->getPost();
+
+        if (empty($data['password'])) {
+            $this->error('Le mot de passe est obligatoire.');
+            return $this->redirect('/admin/user/new');
+        }
+
+        $user = new \App\Entities\User();
+        $user->fill($data);
+
+        if ($userModel->save($user)) {
+            $this->success('Utilisateur créé avec succès.');
+            
+            // Gestion de l'avatar pour le nouvel utilisateur
+            $avatarFile = $this->request->getFile('avatar');
+            
+            if ($avatarFile && $avatarFile->isValid() && !$avatarFile->hasMoved()) {
+                helper('utils');
+                
+                $result = upload_file(
+                    $avatarFile,
+                    'avatars',
+                    $user->username,
+                    [
+                        'entity_id' => $user->id,
+                        'entity_type' => 'user',
+                        'title' => 'Avatar de ' . $user->username,
+                        'alt' => 'Photo de profil de ' . $user->username
+                    ],
+                    false,
+                    ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+                    2048
+                );
+                
+                if (is_array($result) && isset($result['status']) && $result['status'] === 'error') {
+                    $this->warning('Utilisateur créé mais erreur avatar : ' . $result['message']);
+                }
+            }
+            
+            return $this->redirect('/admin/user/');
+        } else {
+            $errors = $userModel->errors();
+            foreach ($errors as $error) {
+                $this->error($error);
+            }
+            return $this->redirect('/admin/user/new');
+        }
+    }
+
+    public function switchActive() 
+    {
+        $id = $this->request->getPost('id_user');
+        $userModel = model('UserModel');
+
+        $user = $userModel->withDeleted()->find($id);
+
+        if (!$user) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Utilisateur introuvable'
+            ]);
+        }
+
+        if ($user->isActive()) {
+            $userModel->delete($id);
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Utilisateur désactivé',
+                'status' => 'inactive'
+            ]);
+        } else {
+            if ($userModel->reactive($id)) {
+                return $this->response->setJSON([
+                    'success' => true,
+                    'message' => 'Utilisateur activé',
+                    'status' => 'active'
+                ]);
+            } else {
+                return $this->response->setJSON([
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'activation'
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Supprime l'avatar d'un utilisateur (AJAX)
+     */
+    public function deleteAvatar()
+    {
+        if (!$this->request->isAJAX()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Requête non autorisée'
+            ]);
+        }
+        
+        $id = $this->request->getPost('id_user');
+        $userModel = model('UserModel');
+        
+        $user = $userModel->find($id);
+        
+        if (!$user) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Utilisateur introuvable'
+            ]);
+        }
+        
+        if ($user->deleteAvatar()) {
+            return $this->response->setJSON([
+                'success' => true,
+                'message' => 'Avatar supprimé avec succès'
+            ]);
+        } else {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Aucun avatar à supprimer ou erreur lors de la suppression'
+            ]);
+        }
+    }
+
+    public function search()
+    {
+        $request = $this->request;
+
+        if (!$request->isAJAX()) {
+            return $this->response->setJSON(['error' => 'Requête non autorisée']);
+        }
+
+        $um = Model('UserModel');
+
+        $search = $request->getGet('search') ?? '';
+        $page = (int)($request->getGet('page') ?? 1);
+        $limit = 20;
+
+        $result = $um->quickSearchForSelect2($search, $page, $limit);
+
+        return $this->response->setJSON($result);
+    }
+}
+```
+
+</details>
+
+---
+
+### 9.5 Exercice final : Créer un contrôleur de test
 
 Créez `app/Controllers/TestMedia.php` :
 
@@ -1278,35 +2149,77 @@ class TestMedia extends BaseController
         $media = $mediaModel->first();
         
         if (!$media) {
-            echo "Aucun média en base de données";
+            echo "<h1>Aucun média en base de données</h1>";
+            echo "<p>Veuillez d'abord uploader un fichier via l'interface.</p>";
             return;
         }
         
         echo "<h1>Test de l'Entity Media</h1>";
-        echo "<p><strong>URL :</strong> " . $media->getUrl() . "</p>";
+        echo "<div style='font-family: Arial; line-height: 1.8;'>";
+        echo "<p><strong>ID :</strong> " . $media->id . "</p>";
+        echo "<p><strong>Chemin :</strong> " . esc($media->file_path) . "</p>";
+        echo "<p><strong>URL :</strong> <a href='" . $media->getUrl() . "' target='_blank'>" . $media->getUrl() . "</a></p>";
         echo "<p><strong>Extension :</strong> " . $media->getFileExtension() . "</p>";
-        echo "<p><strong>Est une image :</strong> " . ($media->isImage() ? 'Oui' : 'Non') . "</p>";
+        echo "<p><strong>Est une image :</strong> " . ($media->isImage() ? '✅ Oui' : '❌ Non') . "</p>";
         echo "<p><strong>Taille :</strong> " . $media->getFormattedFileSize() . "</p>";
-        echo "<p><strong>Fichier existe :</strong> " . ($media->fileExists() ? 'Oui' : 'Non') . "</p>";
-        echo "<p><strong>Type valide :</strong> " . ($media->isValidEntityType() ? 'Oui' : 'Non') . "</p>";
-        echo "<p><strong>Créé le :</strong> " . $media->created_at->humanize() . "</p>";
+        echo "<p><strong>Fichier existe :</strong> " . ($media->fileExists() ? '✅ Oui' : '❌ Non') . "</p>";
+        echo "<p><strong>Type d'entité :</strong> " . esc($media->entity_type) . "</p>";
+        echo "<p><strong>ID d'entité :</strong> " . $media->entity_id . "</p>";
+        echo "<p><strong>Type valide :</strong> " . ($media->isValidEntityType() ? '✅ Oui' : '❌ Non') . "</p>";
+        echo "<p><strong>Créé le :</strong> " . $media->created_at->toDateTimeString() . " (" . $media->created_at->humanize() . ")</p>";
+        
+        if ($media->isImage() && $media->fileExists()) {
+            echo "<hr>";
+            echo "<h2>Aperçu de l'image</h2>";
+            echo "<img src='" . $media->getUrl() . "' alt='Test' style='max-width: 500px; border: 2px solid #ccc; border-radius: 8px;'>";
+        }
+        
+        echo "</div>";
+    }
+    
+    public function testUser($id = null)
+    {
+        if ($id === null) {
+            echo "<h1>Test Avatar Utilisateur</h1>";
+            echo "<p>Utilisez : /test-media/user/[ID]</p>";
+            return;
+        }
+        
+        $userModel = model('UserModel');
+        $user = $userModel->find($id);
+        
+        if (!$user) {
+            echo "<h1>Utilisateur introuvable</h1>";
+            return;
+        }
+        
+        echo "<h1>Test Avatar - " . esc($user->username) . "</h1>";
+        echo "<div style='font-family: Arial; line-height: 1.8;'>";
+        echo "<p><strong>Nom complet :</strong> " . esc($user->getFullName()) . "</p>";
+        echo "<p><strong>Email :</strong> " . esc($user->email) . "</p>";
+        echo "<p><strong>A un avatar :</strong> " . ($user->hasAvatar() ? '✅ Oui' : '❌ Non') . "</p>";
+        echo "<p><strong>URL de l'avatar :</strong> <a href='" . $user->getAvatarUrl() . "' target='_blank'>" . $user->getAvatarUrl() . "</a></p>";
+        
+        echo "<hr>";
+        echo "<h2>Aperçu</h2>";
+        echo "<img src='" . $user->getAvatarUrl() . "' alt='Avatar' style='width: 150px; height: 150px; border-radius: 50%; border: 3px solid #007bff;'>";
+        
+        if ($user->hasAvatar()) {
+            $avatar = $user->getAvatar();
+            echo "<hr>";
+            echo "<h2>Détails du fichier avatar</h2>";
+            echo "<p><strong>Taille :</strong> " . $avatar->getFormattedFileSize() . "</p>";
+            echo "<p><strong>Extension :</strong> " . $avatar->getFileExtension() . "</p>";
+            echo "<p><strong>Chemin :</strong> " . esc($avatar->file_path) . "</p>";
+        }
+        
+        echo "</div>";
     }
 }
 ```
 
 ### Question finale 🎓
-Ajoutez la route correspondante dans `app/Config/Routes.php` et testez votre Entity !
-
-<details>
-<summary>✅ Route à ajouter</summary>
-
-```php
-$routes->get('test-media', 'TestMedia::index');
-```
-
-Puis accédez à : `http://votre-site/test-media`
-
-</details>
+Ajoutez les routes correspondantes dans `app/
 
 ---
 
@@ -1351,3 +2264,7 @@ Avant de considérer le TP terminé, vérifiez que :
 - [ ] **Les méthodes avatar sont ajoutées à User.php**
 - [ ] **L'upload d'avatar fonctionne dans le formulaire utilisateur**
 - [ ] **Vous comprenez le principe des transactions ACID**
+
+---
+
+**Bon courage ! 💪**
