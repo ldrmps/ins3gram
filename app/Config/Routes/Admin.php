@@ -11,6 +11,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->post('insert', 'User::insert');
         $routes->post('switch-active','User::switchActive');
         $routes->get('search', 'User::search');
+        $routes->post('delete-avatar', 'User::deleteAvatar');
     });
 
     $routes->group('user-permission', function ($routes) {
@@ -34,7 +35,6 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->post('update', 'Brand::update');
         $routes->post('insert', 'Brand::insert');
         $routes->post('delete', 'Brand::delete');
-        $routes->get('search', 'Brand::search');
     });
 
     $routes->group('ingredient', function ($routes) {
@@ -50,6 +50,13 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->get('search', 'Unit::search');
     });
 
+    $routes->group('category-ingredient', function ($routes) {
+        $routes->get('/', 'CategIng::index');
+        $routes->post('update', 'CategIng::update');
+        $routes->post('insert', 'CategIng::insert');
+        $routes->post('delete', 'CategIng::delete');
+    });
+
     $routes->group('tag', function ($routes) {
         $routes->get('/', 'Tag::index');
         $routes->post('update', 'Tag::update');
@@ -57,19 +64,8 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
         $routes->post('delete', 'Tag::delete');
     });
 
-    $routes->group('category-ingredient', function ($routes) {
-        $routes->get('/', 'CategIng::index');
-        $routes->post('update', 'CategIng::update');
-        $routes->post('insert', 'CategIng::insert');
-        $routes->post('delete', 'CategIng::delete');
-        $routes->get('search', 'CategIng::search');
-    });
-
-    $routes->group('unit',function($routes){
-        $routes->get('search','Unit::search');
-        $routes->get('/','Unit::index');
-        $routes->post('update','Unit::update');
-        $routes->post('insert','Unit::insert');
-        $routes->post('delete','Unit::delete');
+    $routes->group('media', function ($routes) {
+        $routes->get('/', 'Media::index');
+        $routes->get('charger-plus', 'Media::loadMore');
     });
 });
