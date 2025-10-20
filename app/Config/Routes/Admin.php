@@ -66,6 +66,7 @@ $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'au
 
     $routes->group('media', function ($routes) {
         $routes->get('/', 'Media::index');
-        $routes->get('charger-plus', 'Media::loadMore');
+        $routes->get('load-more', 'Media::loadMore');
+        $routes->post('delete', 'Media::delete');
     });
 });

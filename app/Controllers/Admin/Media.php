@@ -21,4 +21,26 @@ class Media extends BaseController
         $medias = Model('MediaModel')->getMedias($page, 6);
         return $this->response->setJson($medias['data']);
     }
+
+    public function delete() {
+        $id = $this->request->getPost('id');
+        $mm = Model('MediaModel');
+        $media = $mm->find($id);
+        if (!$media) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Media introuvable'
+            ]);
+        }
+        if (!$media->delete()) {
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Erreur lors de la suppression'
+            ]);
+        }
+        return $this->response->setJSON([
+            'success' => true,
+            'message' => 'Media supprimé'
+        ]);
+    }
 }
