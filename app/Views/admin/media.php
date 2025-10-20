@@ -18,9 +18,12 @@
                 <span class="card-title h3">Liste des medias</span>
             </div>
             <div class="card-body">
-                <div class="row row-cols-2 row-cols-md-6 g-3" id="medias">
+                <div class="row row-cols-2 row-cols-md-6 g-1" id="medias">
                     <?php foreach($medias as $media) : ?>
-                        <div class="col">
+                        <div class="col position-relative media">
+                            <div class="position-absolute h-100 w-100 img-thumbnail hover-media" style="background-color: rgba(0,0,0,0.3); display: none;">
+                                Coucou
+                            </div>
                             <img class="img-thumbnail" src="<?= $media->getUrl(); ?>">
                         </div>
                     <?php endforeach; ?>
@@ -40,6 +43,12 @@
 <script>
     $(document).ready(function() {
         var page = 1;
+        $('#medias').on('mouseenter','.media', function() {
+            $(this).find('.hover-media').show();
+        });
+        $('#medias').on('mouseleave','.media', function() {
+            $(this).find('.hover-media').hide();
+        });
         $('#loadMore').click(function () {
             page++;
             $.ajax({
@@ -51,7 +60,10 @@
                 success : function(data) {
                     for(var i = 0; i < data.length; i++) {
                         var img = `
-                            <div class="col">
+                            <div class="col position-relative media">
+                                <div class="position-absolute h-100 w-100 img-thumbnail hover-media" style="background-color: rgba(0,0,0,0.3); display: none;">
+                                    Coucou
+                                </div>
                                 <img class="img-thumbnail" src="${base_url+data[i].file_path}" alt="...">
                             </div>
                         `;
