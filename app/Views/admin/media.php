@@ -43,9 +43,36 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="modal-meta" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="h5 modal-title">Modification des metas</span>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <img src="" class="img-thumbnail">
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="title" placeholder="Title">
+                    <label for="title">Title</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="alt" placeholder="Alt">
+                    <label for="alt">Alt</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="save-meta">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
     var page = 1;
     var entity_type = null;
+    const metaModal = new bootstrap.Modal("#modal-meta");
     $(document).ready(function() {
         load();
         $('#medias').on('mouseenter','.media', function() {
@@ -108,6 +135,65 @@
                 }
             });
         });
+        $('#medias').on('click', '.edit-meta', function() {
+            let id = $(this).data('id');
+            $('#save-meta').data('id', id);
+            $.ajax({
+                url : base_url + '/admin/media/one',
+                type : "GET",
+                data : {
+                    id : id
+                },
+                success: function(data) {
+                    $('#title').val(data.title);
+                    $('#alt').val(data.alt);
+                    $('#modal-meta img').attr('src', base_url+data.file_path);
+                },
+                error : function(xhr, status, error) {
+                    console.log(error);
+                }
+            })
+            metaModal.show();
+        });
+        $("#save-meta").on('click', function() {
+            var title = $('#title').val();
+            var alt = $('#alt').val();
+            var id = $(this).data('id');
+            $.ajax({
+                url : base_url + '/admin/media/save-meta',
+                type : "POST",
+                data : {
+                    title : title,
+                    alt : alt,
+                    id : id
+                },
+                success : function(data) {
+                    if (data.success) {
+                        Swal.fire({
+                            icon : 'success',
+                            title : 'Succès',
+                            text: data.message,
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Erreur",
+                            text: data.message,
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false,
+                        });
+                    }
+                },
+                error : function(xhr, status, error) {
+                    console.log(error);
+                }
+            });
+            metaModal.hide();
+        })
     });
 
     function load() {
@@ -119,7 +205,7 @@
                 entity_type: entity_type
             },
             success : function(data) {
-                if (data[1] == page) {
+                if (data[1] == page || data[1] === 0) {
                     $('#loadMore').text('Plus de medias à charger');
                     $('#loadMore').addClass('disabled');
                 } else {
@@ -132,18 +218,20 @@
                     if (data[i].entity_type.indexOf('_') !== -1) {
                         entity_type = data[i].entity_type.substring(0, data[i].entity_type.indexOf('_'));
                     }
-                    console.log(data[i]);
                     var img = `
                             <div class="col media">
                                 <div class="position-relative">
                                     <div class="position-absolute img-thumbnail w-100 h-100 hover-media" style="background-color: rgba(0,0,0,0.3); display: none;">
                                         <div class="d-flex flex-column justify-content-center align-items-stretch h-100 p-2">
-                                            <a href="${base_url+data[i].file_path}" data-lightbox="mainslider" class="btn btn-success text-light mb-2">
+                                            <a href="${base_url+data[i].file_path}" data-lightbox="mainslider" class="btn btn-success btn-sm text-light mb-2">
                                             <i class="fa fa-eye"></i> Afficher </a>
-                                            <a href="${base_url + '/admin/' + entity_type + '/' + data[i].entity_id}" class="btn btn-primary text-light mb-2">
+                                            <a href="${base_url + '/admin/' + entity_type + '/' + data[i].entity_id}" class="btn btn-primary btn-sm text-light mb-2">
                                                 <i class="fa fa-pencil"></i> Editer l'original
                                             </a>
-                                            <span class="delete-media btn btn-danger text-light" data-id="${data[i].id}">
+                                            <span class="edit-meta btn btn-info btn-sm text-light mb-2" data-id="${data[i].id}">
+                                                <i class="fa fa-pencil"></i> Editer les metas
+                                            </span>
+                                            <span class="delete-media btn btn-danger btn-sm text-light" data-id="${data[i].id}">
                                                 <i class="fa fa-trash"></i> Supprimer
                                             </span>
                                         </div>
@@ -177,7 +265,7 @@
         cursor: pointer;
     }
 
-    #medias img {
+    #medias img, #modal-meta img {
         object-fit: cover;
         width: 100%;
         height : 200px;
