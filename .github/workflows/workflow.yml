@@ -52,3 +52,5 @@ jobs:
       # ÉTAPE 5 : EXÉCUTER LES TESTS
       - name: Run PHPUnit tests
         run: vendor/bin/phpunit --colors=always
+
+# retry
