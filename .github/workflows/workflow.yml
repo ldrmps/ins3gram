@@ -24,12 +24,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
       # ÉTAPE 2 : CONFIGURER PHP
-      - name: Setup PHP 8.1
+      - name: Setup PHP 8.4
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.4'
           extensions: intl, mbstring, mysqli, pdo_mysql, xml
-          coverage: none
+          coverage: xdebug
       # ÉTAPE 3 : CACHE COMPOSER DEPENDENCIES
       - name: Cache Composer dependencies
         uses: actions/cache@v3
