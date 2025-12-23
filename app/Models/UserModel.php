@@ -24,35 +24,14 @@ class UserModel extends Model
     protected $updatedField  = 'updated_at';
     protected $deletedField  = 'deleted_at';
 
-    protected $beforeInsert = ['setCreateRules'];
-    protected $beforeUpdate = ['setUpdateRules'];
-
-    protected function setCreateRules(array $data)
-    {
-        $this->validationRules = [
-            'email'    => 'required|valid_email|max_length[255]|is_unique[user.email]',
-            'password' => 'required|min_length[8]|max_length[255]',
-            'username' => 'required|min_length[3]|max_length[255]|is_unique[user.username]',
-            'first_name' => 'permit_empty|max_length[255]',
-            'last_name'  => 'permit_empty|max_length[255]',
-            'birthdate'  => 'required|valid_date',
-        ];
-        return $data;
-    }
-
-    protected function setUpdateRules(array $data)
-    {
-        $id = $data['data']['id'] ?? null; // l’ID de l’utilisateur à mettre à jour
-        $this->validationRules = [
-            'email'    => "required|valid_email|max_length[255]|is_unique[user.email,id,$id]",
-            'password' => 'permit_empty|min_length[8]|max_length[255]',
-            'username' => "required|min_length[3]|max_length[255]|is_unique[user.username,id,$id]",
-            'first_name' => 'permit_empty|max_length[255]',
-            'last_name'  => 'permit_empty|max_length[255]',
-            'birthdate'  => 'required|valid_date',
-        ];
-        return $data;
-    }
+    protected $validationRules = [
+        'email'    => "required|valid_email|max_length[255]|is_unique[user.email,id,{primaryKey}]",
+        'password' => 'permit_empty|min_length[8]|max_length[255]',
+        'username' => "required|min_length[3]|max_length[255]|is_unique[user.username,id,{primaryKey}]",
+        'first_name' => 'permit_empty|max_length[255]',
+        'last_name'  => 'permit_empty|max_length[255]',
+        'birthdate'  => 'required|valid_date',
+    ];
 
     protected $validationMessages = [
         'email' => [
@@ -86,7 +65,7 @@ class UserModel extends Model
 
     public function findByEmail(string $email): ?User
     {
-        return $this->where('email', $email)->first();
+        return $this->where('email', $email)->withDeleted()->first();
     }
 
     /**
