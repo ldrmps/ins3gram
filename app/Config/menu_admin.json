@@ -11,6 +11,11 @@
     "icon" : "<i class=\"nav-icon fas fa-martini-glass-citrus\"></i>",
     "class" : ""
   },
+  "media":{
+    "title": "Medias",
+    "url": "/admin/media",
+    "icon": "<i class=\"nav-icon fas fa-images\"></i>"
+  },
   "ingredient": {
     "title": "Ingrédients",
     "icon": "<i class=\"nav-icon fas fa-clipboard-list\"></i>",

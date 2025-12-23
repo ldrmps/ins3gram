@@ -1,0 +1,54 @@
+name: tests.yml
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ins3gram_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=3
+    steps:
+      # ÉTAPE 1 : CHECKOUT CODE
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      # ÉTAPE 2 : CONFIGURER PHP
+      - name: Setup PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: intl, mbstring, mysqli, pdo_mysql, xml
+          coverage: none
+      # ÉTAPE 3 : CACHE COMPOSER DEPENDENCIES
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+      # ÉTAPE 4 : INSTALLER DEPENDENCIES
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+      # ÉTAPE 5 : ATTENDRE MYSQL
+      - name: Wait for MySQL
+        run: |
+          while ! mysqladmin ping -h 127.0.0.1 -u root -proot --silent; do
+            echo "Waiting for MySQL"
+            sleep 1
+          done
+          echo "MySQL is ready!"
+      # ÉTAPE 5 : EXÉCUTER LES TESTS
+      - name: Run PHPUnit tests
+        run: vendor/bin/phpunit --colors=always

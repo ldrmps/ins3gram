@@ -52,6 +52,10 @@
     <link href="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.0.0/b-3.0.0/b-html5-3.0.0/fh-4.0.0/sp-2.3.0/datatables.min.css" rel="stylesheet">
     <script src="https://cdn.datatables.net/v/bs5/jq-3.7.0/dt-2.0.0/b-3.0.0/b-html5-3.0.0/fh-4.0.0/sp-2.3.0/datatables.min.js"></script>
 
+    <!-- LIGHTBOX2 -->
+    <link rel="stylesheet" href="<?= base_url('/css/lightbox.min.css') ?>">
+    <script src="<?= base_url('/js/lightbox.min.js') ?>"></script>
+
     <!-- SWEETALERT 2  -->
     <link href="<?= base_url('/css/sweetalert2.min.css') ?>" rel="stylesheet">
     <script src="<?= base_url('/js/sweetalert2.all.min.js') ?>"></script>
@@ -68,10 +72,7 @@
     <link href="<?=base_url('/css/select2-bootstrap-5-theme.min.css'); ?>" rel="stylesheet"></link>
     <script src="<?= base_url('/js/select2.min.js') ?>"></script>
 
-    <!-- SELECT 2 (recherche) -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
 
 </head>
 <script>

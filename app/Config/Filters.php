@@ -110,4 +110,15 @@ class Filters extends BaseFilters
      * @var array<string, array<string, list<string>>>
      */
     public array $filters = [];
+    public function __construct()
+    {
+        parent::__construct();
+
+        // Désactiver CSRF en environnement de test
+        if (ENVIRONMENT === 'testing') {
+            // Retirer complètement csrf des globals
+            unset($this->globals['before']['csrf']);
+
+        }
+    }
 }
